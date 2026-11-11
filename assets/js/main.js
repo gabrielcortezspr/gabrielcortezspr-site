@@ -1,5 +1,6 @@
 import { profile, history, stack, projects, medals, currentLog } from './data.js';
 import { mountModel } from './models.js';
+import { pixelSvg } from './icons.js';
 import { piano, note, arp, playSong, stopSong, noteName, SCALE } from './piano.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -45,8 +46,16 @@ function onMove(ply) {
 function soundUI() {
   const b = $('#sound-btn');
   const sync = (on) => { b.setAttribute('aria-pressed', on); $('em', b).textContent = on ? 'on' : 'off'; };
-  b.addEventListener('click', () => { const on = piano.toggle(); if (on) arp([55, 62, 67, 71, 74], 0.08, 0.35); });
+  const remember = (on) => { try { localStorage.setItem('gc-sound', on ? '1' : '0'); } catch {} };
+  b.addEventListener('click', () => { const on = piano.toggle(); remember(on); if (on) arp([55, 62, 67, 71, 74], 0.08, 0.35); });
   piano.onChange(sync);
+  // quem deixou o som ligado da última vez: liga no primeiro toque/tecla (exigência dos navegadores)
+  let wanted = false; try { wanted = localStorage.getItem('gc-sound') === '1'; } catch {}
+  if (wanted) {
+    sync(true);
+    const wake = (e) => { if (e.target.closest?.('#sound-btn')) return; if (!piano.on) piano.enable(); removeEventListener('pointerdown', wake, true); removeEventListener('keydown', wake, true); };
+    addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true);
+  }
   // gota de tinta no fundo = nota grave
   addEventListener('pointerdown', (e) => {
     if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal,.medal-stage') || inPiano) return;
@@ -234,7 +243,7 @@ function openProject(id) {
     <p>${esc(p.text)}</p>
     ${p.facts ? `<ul class="facts">${p.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
     <div class="chips">${p.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
-    ${p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">abrir no github <span>→</span></a>` : '<span class="dim">repositório privado · peça uma demo</span>'}`;
+    ${p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">abrir no github <span>→</span></a>` : `<a class="btn ghost" href="mailto:${profile.links.email}?subject=${encodeURIComponent('Demo: ' + p.name)}">pedir uma demo <span>→</span></a> <span class="dim">· repositório privado</span>`}`;
   m.hidden = false;
   modalModel?.destroy();
   const big = $('.model-big', card);
@@ -259,7 +268,7 @@ function medalRow() {
         ${medals.map((m, i) => ({ m, i })).filter(({ m }) => m.year === y).map(({ m, i }) => `
           <button class="medal ${m.tier}" data-i="${i}" data-cat="${m.cat}" style="--d:${(k++) * 80}ms; --sw:${(i % 3) * .4}s" aria-label="${esc(m.title)}: ${esc(m.sub)}">
             <span class="ribbon"></span>
-            ${m.tier === 'trophy' ? `<span class="obj">${pixelSvg(TROPHY)}</span>` : m.tier === 'seal' ? `<span class="obj">${pixelSvg(SCROLL)}</span>` : `<span class="coin"><span class="side">${esc(m.glyph)}</span></span>`}
+            ${m.tier === 'trophy' ? `<span class="obj">${pixelSvg('trophy', 'var(--m)')}</span>` : m.tier === 'seal' ? `<span class="obj">${pixelSvg('scroll')}</span>` : `<span class="coin"><span class="side">${m.icon ? `<span class="ico ico-${m.icon}">${pixelSvg(m.icon, 'var(--g)')}</span>` : esc(m.glyph)}</span></span>`}
             <span class="lbl"><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></span>
           </button>`).join('')}
       </div>
@@ -298,46 +307,6 @@ function medalRow() {
 // medalha 3D com física (carregada só quando alguém clica)
 let medalStage = null, medalStageP = null;
 const TIER_PT = { trophy: 'troféu · campeão', gold: 'medalha de ouro', silver: 'medalha de prata', bronze: 'medalha de bronze', honor: 'honra ao mérito', seal: 'certificado' };
-const HINT = {
-  stand: 'arraste para girar o troféu no expositor · puxe para cima/baixo para inclinar',
-  scroll: 'arraste para girar e balançar o pergaminho pelos cordões',
-  medal: 'arraste para girar e balançar · ela fica pendurada pela fita'
-};
-// ícones em pixel art para a vitrine (troféu e pergaminho)
-const TROPHY = [
-  '############',
-  '##.######.##',
-  '#..##r###..#',
-  '#..#rrr##..#',
-  '##.##r###.##',
-  '...######...',
-  '....####....',
-  '.....##.....',
-  '.....##.....',
-  '....++++....',
-  '...######...',
-  '...######...'
-];
-const SCROLL = [
-  'oooooooooooo',
-  '.pppppppppp.',
-  '.pllllllllp.',
-  '.pppppppppp.',
-  '.plllllpppp.',
-  '.pppppppppp.',
-  '.pllllllllp.',
-  '.pppppppppp.',
-  '.pppppprrpp.',
-  '.ppppprrrrp.',
-  '.pppppprrpp.',
-  'oooooooooooo'
-];
-function pixelSvg(grid) {
-  const C = { '#': 'var(--m)', '+': '#6c6c6c', r: '#e0443a', o: '#2a2a2a', p: '#e8e4da', l: '#9a9a9a' };
-  let r = '';
-  grid.forEach((row, y) => [...row].forEach((ch, x) => { if (C[ch]) r += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${C[ch]}"/>`; }));
-  return `<svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
-}
 async function openMedal(m) {
   const st = $('#medal-stage');
   $('#ms-tier').textContent = TIER_PT[m.tier] || '';
@@ -351,15 +320,12 @@ async function openMedal(m) {
       medalStage = mod.createMedalStage($('#medal-canvas'), {
         onChime: (v) => note([86, 90, 93, 98][Math.floor(Math.random() * 4)], 0.12 + v * 0.4, 1.8)
       });
-      $('#ms-drop').addEventListener('click', () => medalStage.spin());
       $('#ms-close').addEventListener('click', closeMedal);
     });
   }
   await medalStageP;
   medalStage.pause(false);
-  const kind = medalStage.setMedal(m);
-  $('.ms-hint').textContent = HINT[kind] || HINT.medal;
-  $('#ms-drop').textContent = kind === 'stand' ? '↻ girar troféu' : '↻ girar';
+  medalStage.setMedal(m);
   $('#ms-close').focus();
 }
 function closeMedal() {
@@ -394,7 +360,7 @@ const recent = [];
 function renderTracker() {
   const t = $('#tracker'); if (!t) return;
   t.innerHTML = `<span class="dim">♩ = 70 · lent et douloureux · G△7 ⇄ D△7</span>\n<b>▸</b> ${
-    recent.slice(-8).map((n, i, a) => i === a.length - 1 ? `<i class="a">${n}</i>` : n).join(' <span class="dim">─</span> ') || '<span class="dim">clique nas teclas do piano…</span>'}`;
+    recent.slice(-8).map((n, i, a) => i === a.length - 1 ? `<i class="a">${n}</i>` : n).join(' <span class="dim">─</span> ') || '<span class="dim">—</span>'}`;
 }
 function pianoLight(m, on) {
   scene?.press(m, on);
@@ -431,13 +397,6 @@ function contact() {
     <a href="${L.github}" target="_blank" rel="noopener">github</a>`;
   $('#quote').innerHTML = `“${esc(profile.quote.text)}”<cite>— ${esc(profile.quote.author)}</cite>`;
   $('#year').textContent = new Date().getFullYear();
-
-  // tabuleiro final em ASCII: o cavalo de f3 deu mate em f4
-  const rows = ['r.bq#bnr', 'pppp.ppp', '..n.....', '.B..p...', '....PN..', '........', 'PPPP.PPP', 'RNBQK..R'];
-  $('#final-board').innerHTML =
-    '  ┌─────────────────┐\n' +
-    rows.map((r, i) => `${8 - i} │ ${[...r].map((c) => c === '#' ? '<i class="a">#</i>' : c === 'N' && i === 4 ? '<b>N</b>' : c === '.' ? '<span class="dim">·</span>' : c).join(' ')} │`).join('\n') +
-    '\n  └─────────────────┘\n    a b c d e f g h\n   <span class="dim">10. Nf4#  1-0</span>';
 
   const out = $('#ping-out');
   const io = new IntersectionObserver(async ([e]) => {

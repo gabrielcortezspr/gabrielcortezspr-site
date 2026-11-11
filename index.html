@@ -60,9 +60,7 @@
           <a class="btn pix" href="#projects">ver jogadas <span>→</span></a>
           <a class="btn ghost" href="#contact">ping gabriel</a>
         </div>
-        <p class="hint">clique no fundo para pingar tinta · <kbd>~</kbd> abre o terminal · <kbd>♪</kbd> liga o piano</p>
       </div>
-      <div class="scroll-cue" aria-hidden="true"><span>scroll</span><i></i></div>
       <div class="kanji" aria-hidden="true">墨流し</div>
     </section>
 
@@ -116,13 +114,13 @@
     <section id="piano" data-scene="piano" class="panel left piano">
       <h2 class="cmd" data-cmd="./piano --satie"></h2>
       <div class="glass piano-card">
-        <p class="lead-s">Entre um lance e outro, piano. Clique nas teclas do piano 3D ao fundo ou use <kbd>a</kbd> <kbd>w</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>d</kbd>… <kbd>;</kbd></p>
+        <p class="lead-s">Entre um lance e outro, Satie no piano ao fundo.</p>
         <pre class="tracker" id="tracker" aria-live="off"></pre>
         <div class="piano-ctl">
           <button class="btn pix" id="play-satie">▶ gymnopédie nº1</button>
           <button class="btn ghost" id="stop-satie">■ parar</button>
         </div>
-        <p class="tiny-k dim">Erik Satie, 1888 · domínio público · sintetizado em Web Audio</p>
+        <p class="tiny-k dim">Gymnopédie nº1 · Erik Satie, 1888</p>
       </div>
     </section>
 
@@ -134,13 +132,8 @@
         <div class="links" id="links"></div>
       </div>
       <footer class="end">
-        <div class="end-grid">
-          <div>
-            <p class="result">1-0 <span class="dim">·</span> good game<span class="blink">▌</span></p>
-            <blockquote id="quote"></blockquote>
-          </div>
-          <pre class="final-board" id="final-board" aria-label="Posição final: brancas vencem"></pre>
-        </div>
+        <p class="result">1-0 <span class="dim">·</span> good game<span class="blink">▌</span></p>
+        <blockquote id="quote"></blockquote>
         <p class="tiny">© <span id="year"></span> Gabriel Cortez · three.js, glsl, web audio e tinta digital</p>
       </footer>
     </section>
@@ -153,7 +146,7 @@
   </div>
 
   <div class="medal-stage" id="medal-stage" role="dialog" aria-modal="true" aria-labelledby="ms-title" hidden>
-    <canvas id="medal-canvas" aria-label="Medalha 3D suspensa: arraste para girar e balançar"></canvas>
+    <canvas id="medal-canvas" aria-label="Medalha em 3D"></canvas>
     <div class="ms-info">
       <p class="ms-tier" id="ms-tier"></p>
       <h3 id="ms-title"></h3>
@@ -161,8 +154,6 @@
       <p class="ms-desc" id="ms-desc"></p>
     </div>
     <div class="ms-ctl">
-      <span class="ms-hint">arraste para girar e balançar · ela fica pendurada pela fita</span>
-      <button class="btn ghost" id="ms-drop">↻ girar</button>
       <button class="btn pix" id="ms-close">fechar ×</button>
     </div>
   </div>

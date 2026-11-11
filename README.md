@@ -9,7 +9,7 @@ Portfólio pessoal: **xadrez digital × suminagashi × pixel**, no mesmo visual 
 - **Piano 3D ao fundo**, como o tabuleiro: a câmera voa até ele na seção `./piano`. Clique nas teclas 3D ou use `a w s e d…`; o botão toca a Gymnopédie nº 1 de Satie (domínio público) e as teclas afundam em vermelho. Som sintetizado em Web Audio, desligado até você clicar em `♪`. O cavalo também toca uma nota a cada salto.
 - **ASCII só nos detalhes**: boot, terminal (`~`), `neofetch`, `tail -f`, `ping` e o tabuleiro final.
 - **Medalhas** (olimpíadas, competições) com placar e filtros. Vitrine por ano, com as medalhas penduradas; clique numa e ela aparece em 3D pixelado: medalhas **suspensas pela fita** (girar e balançar), o Pro-Link como **troféu** num expositor e os certificados como **pergaminho** pendurado; `stack.board`, `tail -f current.log`, `ping gabriel` e o final `1-0 · good game`.
-- **Terminal interativo**: tecla <kbd>~</kbd> ou botão `>_`. Digite `help`. Tem easter eggs (`sudo hire gabriel`, código Konami).
+- **Terminal** (botão `>_`) com alguns easter eggs para quem gosta de explorar.
 
 ## Editar conteúdo
 

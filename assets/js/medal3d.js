@@ -5,6 +5,7 @@
 // ════════════════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { drawIcon } from './icons.js';
 
 const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 const POST = /* glsl */`
@@ -83,7 +84,10 @@ function buildCoin(m) {
     g.fillStyle = tier.glyph; g.textAlign = 'center'; g.textBaseline = 'middle';
     draw(g);
   });
-  const front = face((g) => { g.font = 'bold 190px "Noto Serif JP", "JetBrains Mono", serif'; g.fillText(m.glyph, 256, 250); });
+  const front = face((g) => {
+    if (m.icon && drawIcon(g, m.icon, 256, 256, 230, tier.glyph)) return;
+    g.font = 'bold 190px "Noto Serif JP", "JetBrains Mono", serif'; g.fillText(m.glyph, 256, 250);
+  });
   const back = face((g) => {
     g.font = 'bold 96px "Silkscreen", monospace'; g.fillText(String(m.year), 256, 220);
     g.font = 'bold 44px "Silkscreen", monospace'; g.fillText(TIER_PT[m.tier] || '', 256, 310);

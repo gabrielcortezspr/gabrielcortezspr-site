@@ -255,13 +255,13 @@ export const medals = [
   { tier: 'bronze', cat: 'intl', glyph: '∑', title: 'American Math Olympiad', desc: 'Bronze internacional em matemática.', sub: 'AMO · bronze', year: 2021 },
   { tier: 'bronze', cat: 'intl', glyph: 'π', title: 'Singapore Math Olympiad', desc: 'Bronze internacional em matemática.', sub: 'SMO · bronze', year: 2021 },
   { tier: 'bronze', cat: 'intl', glyph: '∞', title: 'Matemática sem Fronteiras', desc: 'Bronze na competição internacional de matemática em equipe.', sub: 'bronze', year: 2021 },
-  { tier: 'gold', cat: 'nac', glyph: '✦', title: 'Olimp. Bras. de Astronomia', desc: 'Ouro na Olimpíada Brasileira de Astronomia e Astronáutica.', sub: 'OBA · ouro', year: 2020 },
-  { tier: 'silver', cat: 'nac', glyph: '⚛', title: 'Olimp. Nacional de Ciências', desc: 'Prata nacional em ciências.', sub: 'ONC · prata', year: 2019 },
-  { tier: 'honor', cat: 'nac', glyph: '✓', title: 'Olimp. Nacional de Ciências', desc: 'Honra ao mérito em ciências.', sub: 'ONC · honra ao mérito', year: 2021 },
+  { tier: 'gold', cat: 'nac', glyph: '✦', icon: 'planet', title: 'Olimp. Bras. de Astronomia', desc: 'Ouro na Olimpíada Brasileira de Astronomia e Astronáutica.', sub: 'OBA · ouro', year: 2020 },
+  { tier: 'silver', cat: 'nac', glyph: '⚛', icon: 'atom', title: 'Olimp. Nacional de Ciências', desc: 'Prata nacional em ciências.', sub: 'ONC · prata', year: 2019 },
+  { tier: 'honor', cat: 'nac', glyph: '✓', icon: 'atom', title: 'Olimp. Nacional de Ciências', desc: 'Honra ao mérito em ciências.', sub: 'ONC · honra ao mérito', year: 2021 },
   { tier: 'silver', cat: 'nac', glyph: '$', title: 'Olimp. Bras. Educação Financeira', desc: 'Prata em educação financeira.', sub: 'OBEF · prata', year: 2020 },
-  { tier: 'silver', cat: 'nac', glyph: '⊕', title: 'MOBFOG', desc: 'Mostra Brasileira de Foguetes: prata.', sub: 'foguetes · prata', year: 2020 },
-  { tier: 'bronze', cat: 'nac', glyph: '⊕', title: 'MOBFOG', desc: 'Mostra Brasileira de Foguetes: bronze.', sub: 'foguetes · bronze', year: 2021 },
-  { tier: 'bronze', cat: 'nac', glyph: '⚗', title: 'Olimp. Amazonense de Química', desc: 'Bronze estadual em química.', sub: 'bronze', year: 2020 }
+  { tier: 'silver', cat: 'nac', glyph: '⊕', icon: 'rocket', title: 'MOBFOG', desc: 'Mostra Brasileira de Foguetes: prata.', sub: 'foguetes · prata', year: 2020 },
+  { tier: 'bronze', cat: 'nac', glyph: '⊕', icon: 'rocket', title: 'MOBFOG', desc: 'Mostra Brasileira de Foguetes: bronze.', sub: 'foguetes · bronze', year: 2021 },
+  { tier: 'bronze', cat: 'nac', glyph: '⚗', icon: 'flask', title: 'Olimp. Amazonense de Química', desc: 'Bronze estadual em química.', sub: 'bronze', year: 2020 }
 ];
 
 // tail -f: o que está acontecendo comigo agora
