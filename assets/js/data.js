@@ -41,68 +41,67 @@ export const profile = {
   }
 };
 
-// A história é uma partida: cada marco joga dois meios-lances da variante da troca da Ruy Lopez
-// (a partida em si está em scene.js → GAME).
+// Linha do tempo (as peças do tabuleiro ao fundo se movem enquanto você rola).
 export const history = [
   {
-    move: '3…a6  4.Bxc6', year: '2019 – 2021',
+    year: '2019 – 2021',
     title: 'Olimpíadas científicas',
     place: 'OBA · ONC · AMO · Singapore Math · MOBFOG',
-    text: 'Ouro na Olimpíada Brasileira de Astronomia, pratas na ONC, OBEF e MOBFOG e três bronzes internacionais em matemática. A abertura da partida.'
+    text: 'Ouro na Olimpíada Brasileira de Astronomia, pratas na ONC, OBEF e MOBFOG e três bronzes internacionais em matemática.'
   },
   {
-    move: '4…dxc6  5.O-O', year: 'jun 2022',
+    year: 'jun 2022',
     title: 'Engenharia de Computação — UEA',
     place: 'Universidade do Estado do Amazonas · até dez 2027',
     text: 'Processamento de imagens, computação gráfica, sistemas distribuídos, ciência de dados. Cursos paralelos: CI Amazônia (microeletrônica), FPF Tech (embarcados) e STEM Academy.'
   },
   {
-    move: '5…f6  6.d4', year: 'ago 2024',
+    year: 'ago 2024',
     title: 'Pesquisa em Embarcados — FAPEAM / SENAI',
     place: 'Bolsista de pesquisa · até jul 2025',
     text: 'Estufa automatizada com FPGA Cyclone IV em Verilog: sensores, automação, monitoramento ambiental e comunicação hardware-software. Apresentada no evento internacional Chip in the Jungle.'
   },
   {
-    move: '6…exd4  7.Nxd4', year: 'set 2024',
+    year: 'set 2024',
     title: 'Desenvolvedor de Testes — Fundação Muraki',
     place: 'Bolsista · até dez 2024',
     text: 'Testes automatizados em Java com Selenium e JUnit, testes de API no Postman e cenários BDD com Cucumber, em ambiente ágil.'
   },
   {
-    move: '7…c5  8.Nb3', year: 'fev 2025',
+    year: 'fev 2025',
     title: 'Estagiário de QA — Sidia',
     place: 'Instituto de Ciência e Tecnologia · até fev 2026',
     text: 'QA de software embarcado em Android: testes funcionais, de integração e regressão; validação firmware ↔ SO ↔ apps, comportamentos regulatórios e investigação por logs com o time de engenharia na Coreia.'
   },
   {
-    move: '8…Qxd1  9.Rxd1', year: '2025',
+    year: '2025',
     title: 'BusFlow — finalista estadual da Liga Jovem',
     place: 'IoT · ESP32 · MQTT',
     text: 'Firmware do ESP32 com sensores de proximidade contando passageiros e publicando via MQTT.'
   },
   {
-    move: '9…Bg4  10.f3', year: 'out 2025',
+    year: 'out 2025',
     title: 'Cofundador & Dev de IA — Kacto',
     place: 'Programa Ocean Launch · até fev 2026',
     text: 'Agente conversacional com GPT-4o atendendo clínicas, em produção em 3 clínicas. Pipeline RAG com embeddings no Supabase, testes de regressão, adversarial testing e detecção de alucinação.'
   },
   {
-    move: '10…Be6  11.Nc3', year: 'fev 2026',
+    year: 'fev 2026',
     title: 'Software Engineer — Samsung Electronics',
     place: 'Visual Display Division · automação, dados e IA',
     text: 'Software interno e automação para a engenharia de produção de TVs: pipelines de dados em tempo real, dashboards usados pela liderança no Brasil e na Coreia, ferramentas Python adotadas pelo time de engenharia, RPA para sistemas legados sem API e modelos de machine learning sobre dados de fábrica.'
   },
   {
-    move: '11…Bd6  12.Be3', year: 'set 2026',
+    year: 'set 2026',
     title: 'Campeão do Desafio Pro-Link — CREA-AM',
     place: 'II CENATEC · líder da equipe vencedora',
     text: 'Marketplace que liga profissionais do CREA a empresas com um motor de evidências sobre ART/CAT, desempate com aleatoriedade auditável e LGPD no produto.'
   },
   {
-    move: '12…b6  13.a4', year: 'agora',
+    year: 'agora',
     title: 'NarraTer, pesquisa e freelance',
     place: 'tail -f current.log',
-    text: 'Orquestrador open source de agentes (Tauri 2 + Rust), benchmarks próprios de protocolos multiagente e sites para empresas como Grupo Shamar e Horizont Rec. A partida continua.'
+    text: 'Orquestrador open source de agentes (Tauri 2 + Rust), benchmarks próprios de protocolos multiagente e sites para empresas como Grupo Shamar e Horizont Rec.'
   }
 ];
 

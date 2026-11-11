@@ -40,7 +40,6 @@ async function boot() {
 // cada lance jogado no tabuleiro toca uma nota
 function onMove(ply) {
   note(SCALE[(ply + 3) % SCALE.length], 0.4, 2.4);
-  renderScore(ply);
 }
 
 function soundUI() {
@@ -102,34 +101,18 @@ function about() {
   io.observe(ex);
 }
 
-// ── história: cada marco joga dois meios-lances no tabuleiro ──
-const SAN = ['a6', 'Bxc6', 'dxc6', 'O-O', 'f6', 'd4', 'exd4', 'Nxd4', 'c5', 'Nb3', 'Qxd1', 'Rxd1', 'Bg4', 'f3', 'Be6', 'Nc3', 'Bd6', 'Be3', 'b6', 'a4'];
-function renderScore(ply) {
-  const el = $('#score'); if (!el) return;
-  // súmula: 1.e4 e5 2.Nf3 Nc6 3.Bb5 já jogados; depois 3...a6 4.Bxc6 ...
-  let html = '<span class="pl">1.e4 e5 2.Nf3 Nc6 3.Bb5</span>';
-  SAN.forEach((m, i) => {
-    const moveNo = 3 + Math.floor((i + 1) / 2);
-    const white = i % 2 === 1;
-    const num = white ? `<span class="n">${moveNo}.</span>` : (i === 0 ? '<span class="n">3…</span>' : '');
-    const cls = i < ply - 1 ? 'pl' : i === ply - 1 ? 'cur' : 'todo';
-    html += ` ${num}<span class="${cls}">${m}</span>`;
-  });
-  el.innerHTML = html;
-}
+// ── história ──
 function timeline() {
   const ol = $('#timeline');
   ol.innerHTML = history.map((h, i) => `
     <li data-i="${i}">
       <div class="when"><b>${esc(h.year)}</b><span>${String(i + 1).padStart(2, '0')}/${history.length}</span></div>
       <div class="what">
-        <p class="mv">${esc(h.move)}</p>
         <h3>${esc(h.title)}</h3>
         <p class="place">${esc(h.place)}</p>
         <p class="body">${esc(h.text)}</p>
       </div>
     </li>`).join('');
-  renderScore(0);
   const items = $$('li', ol);
   let active = -1;
   const io = new IntersectionObserver((entries) => {
@@ -140,7 +123,6 @@ function timeline() {
       active = i;
       items.forEach((li, j) => { li.classList.toggle('active', j === i); li.classList.toggle('past', j < i); });
       scene?.setPly((i + 1) * 2);
-      renderScore((i + 1) * 2);
     });
   }, { rootMargin: '-45% 0px -45% 0px' });
   items.forEach((li) => io.observe(li));

@@ -127,16 +127,7 @@ section { min-height: 100vh; padding: 120px var(--gutter) 80px; position: relati
 .checklist span.on { opacity: 1; transform: none; }
 .checklist span b { color: var(--seal); }
 
-/* ── história (a partida acontece no tabuleiro ao fundo) ── */
-.score {
-  position: sticky; top: 64px; z-index: 3; font-size: 12px; line-height: 1.75;
-  padding: 10px 14px; margin: 0 0 2rem; background: rgba(10,10,10,.88);
-  border: 1px solid var(--line); border-left: 2px solid var(--seal); backdrop-filter: blur(6px);
-}
-.score .n { color: var(--ink-4); }
-.score .pl { color: var(--ink-2); }
-.score .cur { color: #fff; background: var(--seal); padding: 0 4px; }
-.score .todo { color: var(--ink-4); opacity: .55; }
+/* ── história ─────────────────────────────────────────── */
 .timeline { list-style: none; padding: 0; margin: 0; }
 .timeline li { display: grid; grid-template-columns: 112px 1fr; gap: 1.4rem; min-height: 58vh; align-items: start; padding-top: 3vh; opacity: .25; transition: opacity .5s; }
 .timeline li.past { opacity: .45; }
@@ -145,7 +136,6 @@ section { min-height: 100vh; padding: 120px var(--gutter) 80px; position: relati
 .when b { font: 700 14px/1.25 var(--pix); }
 .when span { font-size: 11px; color: var(--ink-4); letter-spacing: 1px; }
 .timeline li.active .when { border-color: var(--seal); }
-.what .mv { font: 600 13px var(--mono); color: var(--seal); margin: 0 0 .35rem; letter-spacing: 1px; white-space: pre; }
 .what h3 { font: 700 clamp(16px, 2vw, 21px)/1.3 var(--pix); margin: 0 0 .25rem; }
 .what .place { color: var(--ink-3); font-size: 13px; margin: 0 0 .8rem; }
 .what .body { color: var(--ink-2); margin: 0; background: var(--glass); padding: 16px 18px; border: 1px solid var(--line); border-left: 2px solid var(--ink-4); backdrop-filter: blur(6px); transition: border-color .4s; }
@@ -354,7 +344,6 @@ blockquote cite { display: block; margin-top: .6rem; color: var(--ink-4); font-s
   .card .chips span:nth-child(n+3) { display: none; }
   .hang { gap: 10px 12px; justify-content: space-between; }
   .medal { width: calc(50% - 6px); }
-  .score { top: 58px; font-size: 11px; }
   .tools .term-btn { padding: 4px 7px; }
   .term-btn em { display: none; }
 }
