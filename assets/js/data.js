@@ -9,17 +9,17 @@ export const profile = {
   location: 'Manaus · AM · Brasil',
   opening: '1. e4 e5  2. Nf3 Nc6  3. Bb5',
   whoami: [
-    'Estudante de <b>Engenharia de Computação (UEA)</b> com experiência em engenharia de software, IA aplicada, dados e sistemas embarcados.',
-    'Hoje construo aplicações em Python, pipelines de dados e integrações com IA na linha de produção da <b>Samsung</b>. Cofundei a <b>Kacto</b>, startup de agentes conversacionais em produção, e desenvolvo o <b>NarraTer</b>, um orquestrador open source de agentes de IA com pesquisas comparativas próprias.',
-    'Já atuei em QA de software embarcado, pesquisa em FPGA e automação de testes. Medalhista em olimpíadas científicas internacionais e nacionais.'
+    'Software Engineer focado em automação, dados e IA na <b>Samsung Electronics (Visual Display Division)</b>. Construo software interno e soluções de automação para a engenharia de produção de TVs, da ideia e dos requisitos até o deploy e a adoção.',
+    'Pipelines de dados em tempo real, dashboards de produção, RPA e sistemas internos usados por times de engenharia e liderança no Brasil e na Coreia: transformo problemas operacionais em software confiável, que reduz trabalho manual e melhora o uso dos dados de produção.',
+    'Antes, QA de dispositivos Samsung Galaxy na <b>Sidia</b> e pesquisa em sistemas embarcados com FPGA pela <b>FAPEAM</b>. Cofundei a <b>Kacto</b>, startup de atendimento com IA, e desenvolvo o <b>NarraTer</b>, orquestrador open source de agentes. Estudante de Engenharia de Computação (UEA) e medalhista em olimpíadas científicas.'
   ],
   // bloco estilo neofetch
   fetch: [
     ['os', 'cortez-os · Manaus/AM'],
-    ['host', 'Samsung Eletrônica da Amazônia · VD'],
+    ['host', 'Samsung Electronics · Visual Display'],
     ['uptime', 'UEA · Eng. Computação · 2022 → 2027'],
     ['shell', 'python · typescript · rust · verilog'],
-    ['ai', 'GPT-4o · Gemma · Claude · RAG · agents'],
+    ['ai', 'LLMs · RAG · agents · Scikit-Learn'],
     ['hw', 'ESP32 · FPGA Cyclone IV · Raspberry Pi'],
     ['medals', '9 em olimpíadas · 3 internacionais · 1 troféu'],
     ['lang', 'pt-BR (nativo) · en (avançado, time coreano)']
@@ -87,9 +87,9 @@ export const history = [
   },
   {
     move: '8. Ng7', square: 'g7', year: 'fev 2026',
-    title: 'Estagiário de Eng. de Software — Samsung',
-    place: 'Samsung Eletrônica da Amazônia · Visual Display',
-    text: 'APIs em FastAPI e pipelines ETL sobre dados de teste da linha de produção; validador de especificações que acabou com paradas de linha, com alertas ao time em Suwon; LLM (Gemma) para consultas em linguagem natural; classificação de calibração de cor com scikit-learn. Dois projetos apresentados ao presidente da fábrica no Live Innovation.'
+    title: 'Software Engineer — Samsung Electronics',
+    place: 'Visual Display Division · automação, dados e IA',
+    text: 'Software interno e automação para a engenharia de produção de TVs: pipelines de dados em tempo real, dashboards usados pela liderança no Brasil e na Coreia, ferramentas Python adotadas pelo time de engenharia, RPA para sistemas legados sem API e modelos de machine learning sobre dados de fábrica.'
   },
   {
     move: '9. Nh5!!', square: 'h5', year: 'set 2026',
@@ -225,7 +225,6 @@ export const projects = [
 // tier: gold | silver | bronze | honor | trophy | seal   ·  cat: intl | nac | evt
 export const medals = [
   { tier: 'trophy', cat: 'evt', glyph: '♛', title: 'Desafio Pro-Link', sub: 'Campeão · CREA-AM', year: 2026 },
-  { tier: 'seal', cat: 'evt', glyph: '★', title: 'Live Innovation', sub: 'Samsung · apresentação ao presidente', year: 2026 },
   { tier: 'seal', cat: 'evt', glyph: '♞', title: 'Liga Jovem', sub: 'Finalista estadual · BusFlow', year: 2025 },
   { tier: 'seal', cat: 'evt', glyph: '◈', title: 'Chip in the Jungle', sub: 'Apresentação · estufa FPGA', year: 2025 },
   { tier: 'bronze', cat: 'intl', glyph: '∑', title: 'American Math Olympiad', sub: 'AMO · bronze', year: 2021 },
@@ -241,10 +240,10 @@ export const medals = [
 ];
 
 export const currentLog = [
-  ['samsung', 'fastapi · etl · test data from the production line'],
-  ['validate', 'spec files checked before reaching the line · alerts → suwon'],
-  ['gemma', 'natural language queries over production data'],
-  ['ml', 'color calibration · z-score 3σ · threshold classifier'],
+  ['pipeline', 'real time ingestion · transformation · analysis layer'],
+  ['dash', 'production KPIs for engineering and leadership'],
+  ['rpa', 'selenium · pyautogui · opencv on systems with no api'],
+  ['ml', 'scikit-learn · pandas · numpy on factory data'],
   ['narrater', 'claude ↔ codex ↔ gemini on an infinite canvas'],
   ['bench', 'protocol v7 · 0/40 early returns · $0.65 per task'],
   ['freelance', 'shipping sites · grupo shamar · horizont rec'],

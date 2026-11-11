@@ -49,7 +49,7 @@ function soundUI() {
   piano.onChange(sync);
   // gota de tinta no fundo = nota grave
   addEventListener('pointerdown', (e) => {
-    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal') || inPiano) return;
+    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal,.medal-stage') || inPiano) return;
     note([43, 50, 55, 59, 62][Math.floor(Math.random() * 5)], 0.3, 3);
   });
 }
@@ -293,9 +293,43 @@ function medalRow() {
     });
   }, { threshold: .2 });
   io.observe(row);
-  $$('.medal', row).forEach((el) => {
-    el.addEventListener('click', () => { el.classList.toggle('flip'); note(el.classList.contains('trophy') || el.classList.contains('gold') ? 86 : 79, 0.3, 2); });
+  $$('.medal', row).forEach((el, i) => {
+    const open = () => openMedal(medals[i]);
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
+}
+
+// medalha 3D com física (carregada só quando alguém clica)
+let medalStage = null, medalStageP = null;
+const TIER_PT = { trophy: 'troféu · campeão', gold: 'medalha de ouro', silver: 'medalha de prata', bronze: 'medalha de bronze', honor: 'honra ao mérito', seal: 'evento · competição' };
+async function openMedal(m) {
+  const st = $('#medal-stage');
+  $('#ms-tier').textContent = TIER_PT[m.tier] || '';
+  $('#ms-title').textContent = m.title;
+  $('#ms-sub').textContent = `${m.sub} · ${m.year}`;
+  st.hidden = false;
+  document.body.style.overflow = 'hidden';
+  if (!medalStageP) {
+    medalStageP = import('./medal3d.js').then((mod) => {
+      medalStage = mod.createMedalStage($('#medal-canvas'), {
+        onImpact: (v) => note([86, 90, 93, 98][Math.floor(Math.random() * 4)], 0.15 + v * 0.45, 1.6)
+      });
+      $('#ms-drop').addEventListener('click', () => medalStage.drop());
+      $('#ms-close').addEventListener('click', closeMedal);
+    });
+  }
+  await medalStageP;
+  medalStage.pause(false);
+  medalStage.setMedal(m);
+  $('#ms-close').focus();
+}
+function closeMedal() {
+  const st = $('#medal-stage');
+  if (st.hidden) return;
+  st.hidden = true;
+  document.body.style.overflow = '';
+  medalStage?.pause(true);
 }
 
 // ── tail -f ───────────────────────────────────────────────────
@@ -485,7 +519,7 @@ function terminal(pianoApi) {
   let kpos = 0;
   addEventListener('keydown', (e) => {
     if (e.key === '`' || e.key === '~') { e.preventDefault(); toggle(); return; }
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeMedal(); }
     kpos = e.key === konami[kpos] ? kpos + 1 : 0;
     if (kpos === konami.length) { kpos = 0; scene?.tour(true); toggle(true); print('♞ knight\'s tour desbloqueado!', 'c'); }
   });

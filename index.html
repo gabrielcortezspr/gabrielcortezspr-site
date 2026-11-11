@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Silkscreen:wght@400;700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/style.css" />
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
   </script>
 </head>
 <body>
@@ -151,6 +151,20 @@
 
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal-card" id="modal-card"></div>
+  </div>
+
+  <div class="medal-stage" id="medal-stage" role="dialog" aria-modal="true" aria-labelledby="ms-title" hidden>
+    <canvas id="medal-canvas" aria-label="Medalha 3D: arraste para pegar, solte para jogar"></canvas>
+    <div class="ms-info">
+      <p class="ms-tier" id="ms-tier"></p>
+      <h3 id="ms-title"></h3>
+      <p class="ms-sub" id="ms-sub"></p>
+    </div>
+    <div class="ms-ctl">
+      <span class="ms-hint">arraste para pegar · solte para jogar · toque no tabuleiro para chacoalhar</span>
+      <button class="btn ghost" id="ms-drop">↻ soltar de novo</button>
+      <button class="btn pix" id="ms-close">fechar ×</button>
+    </div>
   </div>
 
   <div class="term" id="term" hidden>

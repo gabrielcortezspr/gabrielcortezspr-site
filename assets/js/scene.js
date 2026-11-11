@@ -380,7 +380,7 @@ export function createScene(canvas) {
 
   const ray = new THREE.Raycaster();
   addEventListener('pointerdown', (e) => {
-    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal')) return;
+    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal,.medal-stage')) return;
     const n = new THREE.Vector2((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1);
     drop(n.x, n.y);
     ray.setFromCamera(n, camera);
