@@ -140,6 +140,7 @@ const STATES = {
   hero:     { ascii: 0, cam: [0, 10.5, 18.5],  look: [0, 0, 0],   off: [5.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
   about:    { ascii: 0, cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
   history:  { ascii: 0, cam: [0, 15.5, 13.5], look: [0, 0, 0.3], off: [4.2, 0, 0], rotY: 0.0,   sink: 0,   dim: 0.08, spin: 0, game: 1 },
+  exp:      { ascii: 0, cam: [0, 15.5, 13.5], look: [0, 0, 0.3], off: [5.4, 0, 0],  rotY: 0.0,   sink: 0,   dim: 0.25, spin: 0 },
   stack:    { ascii: 0, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0 },
   projects: { ascii: 0, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.03 },
   medals:   { ascii: 0, cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },

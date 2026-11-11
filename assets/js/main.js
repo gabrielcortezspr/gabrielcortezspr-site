@@ -1,4 +1,4 @@
-import { profile, history, stack, projects, medals, currentLog } from './data.js';
+import { profile, history, stack, projects, medals, currentLog, experiences } from './data.js';
 import { mountModel } from './models.js';
 import { pixelSvg } from './icons.js';
 import { piano, note, arp, playSong, stopSong, noteName, SCALE } from './piano.js';
@@ -90,7 +90,7 @@ function setupCommands() {
       setTimeout(() => caret.remove(), 1600);
     });
   }, { threshold: .6 });
-  $$('.cmd').forEach((h) => io.observe(h));
+  $$('.cmd[data-cmd]').forEach((h) => io.observe(h));
 }
 
 // ── whoami / neofetch ─────────────────────────────────────────
@@ -110,31 +110,48 @@ function about() {
   io.observe(ex);
 }
 
-// ── história ──
+// ── história (versão curta, dentro de "sobre mim") ──
 function timeline() {
-  const ol = $('#timeline');
-  ol.innerHTML = history.map((h, i) => `
-    <li data-i="${i}">
-      <div class="when"><b>${esc(h.year)}</b><span>${String(i + 1).padStart(2, '0')}/${history.length}</span></div>
-      <div class="what">
-        <h3>${esc(h.title)}</h3>
-        <p class="place">${esc(h.place)}</p>
-        <p class="body">${esc(h.text)}</p>
-      </div>
-    </li>`).join('');
-  const items = $$('li', ol);
-  let active = -1;
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      const i = +e.target.dataset.i;
-      if (i === active) return;
-      active = i;
-      items.forEach((li, j) => { li.classList.toggle('active', j === i); li.classList.toggle('past', j < i); });
-      scene?.setPly((i + 1) * 2);
-    });
-  }, { rootMargin: '-45% 0px -45% 0px' });
-  items.forEach((li) => io.observe(li));
+  $('#timeline').innerHTML = history.map((h) => `
+    <li><b>${esc(h.year)}</b><div><h4>${esc(h.title)}</h4><p>${esc(h.place)}</p></div></li>`).join('');
+}
+
+// ── sobre mim: gaveta opcional ─────────────────────────────────
+function aboutDrawer() {
+  const d = $('#about');
+  const open = () => { d.hidden = false; document.body.style.overflow = 'hidden'; $('#close-about').focus(); arp([62, 66, 69, 74], 0.06, 0.25, 1.8); };
+  const close = () => { if (d.hidden) return; d.hidden = true; document.body.style.overflow = ''; };
+  $$('[data-open-about]').forEach((b) => b.addEventListener('click', open));
+  $('#close-about').addEventListener('click', close);
+  d.addEventListener('click', (e) => { if (e.target === d) close(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  return { open, close };
+}
+
+// ── experiências: objetos 3D clicáveis ─────────────────────────
+function expGrid() {
+  const g = $('#exp-grid');
+  g.innerHTML = experiences.map((x, i) => `
+    <button class="xp${x.now ? ' now' : ''}" data-i="${i}" style="--d:${i * 90}ms" aria-label="${esc(x.org)} — ${esc(x.role)}">
+      <span class="xp-art"><canvas data-model="${x.model}" aria-hidden="true"></canvas></span>
+      <span class="xp-txt">
+        <small>${esc(x.period)}</small>
+        <b>${esc(x.org)}</b>
+        <span>${esc(x.role)}</span>
+      </span>
+    </button>`).join('');
+  const tiles = $$('.xp', g);
+  tiles.forEach((el) => {
+    const x = experiences[+el.dataset.i];
+    mountModel($('canvas', el), x.model, { pixel: 1.6, hoverEl: el });
+    // passar o mouse avança a partida no tabuleiro ao fundo
+    el.addEventListener('pointerenter', () => { scene?.setPly((experiences.length - +el.dataset.i) * 2); note(SCALE[(+el.dataset.i * 2 + 5) % SCALE.length], 0.2, 1.6); });
+    el.addEventListener('click', () => openDetail({
+      title: x.org, kicker: x.now ? 'agora' : x.period, sub: `${x.role} · ${x.period}`, text: x.text, facts: x.facts, tags: x.tags, model: x.model, color: x.now ? '#e0443a' : '#f2f2f2'
+    }));
+  });
+  const io = new IntersectionObserver(([e]) => { if (!e.isIntersecting) return; io.disconnect(); tiles.forEach((t) => t.classList.add('in')); }, { threshold: .15 });
+  io.observe(g);
 }
 
 // ── stack: o que eu faço com cada grupo de tecnologia ─────────
@@ -143,7 +160,6 @@ function stackBoard() {
   b.innerHTML = stack.map((g, i) => `
     <article class="kit" style="--d:${i * 90}ms">
       <header><span class="file">${'abcde'[i]}</span><h3>${esc(g.title)}</h3></header>
-      <p class="kit-what">${esc(g.what)}</p>
       <ul class="kit-items">${g.items.map((it) => `<li>${esc(it)}</li>`).join('')}</ul>
       <p class="kit-where"><span class="dim">usado em</span> ${esc(g.where)}</p>
     </article>`).join('');
@@ -234,20 +250,26 @@ function cards() {
 let modalModel = null;
 function openProject(id) {
   const p = projects.find((x) => x.id === id); if (!p) return;
+  openDetail({
+    title: p.name, kicker: RARITY[p.rarity], sub: p.tagline, text: p.text, facts: p.facts, tags: p.tags, model: p.model, color: RCOLOR[p.rarity],
+    action: p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">abrir no github <span>→</span></a>` : `<a class="btn ghost" href="mailto:${profile.links.email}?subject=${encodeURIComponent('Demo: ' + p.name)}">pedir uma demo <span>→</span></a> <span class="dim">· repositório privado</span>`
+  });
+}
+function openDetail(d) {
   const m = $('#modal'), card = $('#modal-card');
-  card.style.setProperty('--c', RCOLOR[p.rarity]);
+  card.style.setProperty('--c', d.color);
   card.innerHTML = `
     <button class="close" aria-label="Fechar">×</button>
-    <div class="top-row"><div><div class="rar">${RARITY[p.rarity]}</div><h3 id="modal-title">${esc(p.name)}</h3><small class="dim">${esc(p.tagline)}</small></div></div>
+    <div class="top-row"><div><div class="rar">${esc(d.kicker)}</div><h3 id="modal-title">${esc(d.title)}</h3><small class="dim">${esc(d.sub)}</small></div></div>
     <canvas class="model-big" aria-hidden="true"></canvas>
-    <p>${esc(p.text)}</p>
-    ${p.facts ? `<ul class="facts">${p.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
-    <div class="chips">${p.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
-    ${p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">abrir no github <span>→</span></a>` : `<a class="btn ghost" href="mailto:${profile.links.email}?subject=${encodeURIComponent('Demo: ' + p.name)}">pedir uma demo <span>→</span></a> <span class="dim">· repositório privado</span>`}`;
+    <p>${esc(d.text)}</p>
+    ${d.facts ? `<ul class="facts">${d.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+    <div class="chips">${d.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
+    ${d.action || ''}`;
   m.hidden = false;
   modalModel?.destroy();
   const big = $('.model-big', card);
-  modalModel = mountModel(big, p.model, { pixel: 2, spin: .3, hoverEl: big });
+  modalModel = mountModel(big, d.model, { pixel: 2, spin: .3, hoverEl: big });
   $('.close', card).focus();
   arp([55, 59, 62, 66, 71], 0.07, 0.3, 2.2);
   if (scene) scene.drop((Math.random() - .5) * .6, (Math.random() - .5) * .6);
@@ -475,14 +497,14 @@ function terminal(pianoApi) {
     ls: () => print(projects.map((p) => `${p.rarity.padEnd(10)} ${p.id.padEnd(12)} ${esc(p.tagline)}`).join('\n')),
     open: (a) => { const p = projects.find((x) => x.id === a || x.name.toLowerCase() === (a || '').toLowerCase()); if (p) { openProject(p.id); print(`abrindo ${p.name}…`); } else print(`projeto não encontrado: ${esc(a || '')} (tente "ls")`, 'e'); },
     medals: () => { print(medals.map((m) => `${String(m.year)}  ${TIER[m.tier].padEnd(7)} ${esc(m.title)}`).join('\n')); go('medals'); },
-    history: () => go('history'), stack: () => go('stack'), projects: () => go('projects'), contact: () => go('contact'), ping: () => go('contact'), about: () => go('about'),
+    history: () => document.querySelector('[data-open-about]').click(), exp: () => go('exp'), stack: () => go('stack'), projects: () => go('projects'), contact: () => go('contact'), ping: () => go('contact'), about: () => document.querySelector('[data-open-about]').click(),
     piano: () => { go('piano'); setTimeout(() => pianoApi.play(), 700); print('♪ Erik Satie · Gymnopédie nº1 (1888)'); },
     satie: () => cmds.piano(),
     sound: () => print(`som ${piano.toggle() ? 'ligado ♪' : 'desligado'}`),
     ascii: (a) => { if (!scene) return print('webgl indisponível', 'e'); const v = a === 'off' ? null : 1; scene.setAscii(v); print(`ascii = ${v ? 'on' : 'off'} (easter egg)`); },
     pixel: (a) => { if (!scene) return print('webgl indisponível', 'e'); print(`pixel = ${scene.setPixel(+a || 4)}`); },
     ink: () => { if (scene) for (let i = 0; i < 4; i++) setTimeout(() => { scene.drop((Math.random() - .5) * 1.6, (Math.random() - .5) * 1.4); note(SCALE[i * 2], 0.3, 2.5); }, i * 180); print('墨 ~ ~ ~'); },
-    play: () => { scene?.tour(true); go('history'); print('partida automática ♞ (stop para parar)'); },
+    play: () => { scene?.tour(true); go('exp'); print('partida automática ♞ (stop para parar)'); },
     stop: () => { scene?.tour(false); stopSong(); print('ok.'); },
     sudo: (a, all) => print(/hire/.test(all) ? 'permissão concedida ✓  →  ' + esc(profile.links.email) : 'gabriel is not in the sudoers file. this incident will be reported.', /hire/.test(all) ? 'c' : 'e'),
     clear: () => { out.innerHTML = ''; },
@@ -531,7 +553,7 @@ function modal() {
 
 
 // ── init ──────────────────────────────────────────────────────
-about(); timeline(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); setupCommands();
+about(); timeline(); aboutDrawer(); expGrid(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); setupCommands();
 const pianoApi = pianoSection();
 terminal(pianoApi);
 boot().then(() => { sections(); hero(); });

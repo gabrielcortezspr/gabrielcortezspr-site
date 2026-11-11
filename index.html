@@ -32,15 +32,15 @@
   <header class="top">
     <a href="#hero" class="brand">GC<span class="blink">_</span></a>
     <nav class="moves" aria-label="Seções">
-      <a href="#about"><b>1.</b> whoami</a>
-      <a href="#history"><b>2.</b> história</a>
-      <a href="#stack"><b>3.</b> stack</a>
-      <a href="#projects"><b>4.</b> projetos</a>
-      <a href="#medals"><b>5.</b> medalhas</a>
-      <a href="#piano"><b>6.</b> piano</a>
-      <a href="#contact"><b>7.</b> ping</a>
+      <a href="#exp"><b>1.</b> experiências</a>
+      <a href="#projects"><b>2.</b> projetos</a>
+      <a href="#medals"><b>3.</b> conquistas</a>
+      <a href="#stack"><b>4.</b> stack</a>
+      <a href="#piano"><b>5.</b> piano</a>
+      <a href="#contact"><b>6.</b> ping</a>
     </nav>
     <div class="tools">
+      <button class="term-btn about-btn" data-open-about title="Sobre mim">sobre</button>
       <button class="term-btn" id="sound-btn" aria-pressed="false" title="Som (piano)"><span>♪</span><em>off</em></button>
       <button class="term-btn" id="open-term" title="Terminal (tecla ~)"><span>&gt;_</span></button>
     </div>
@@ -57,36 +57,17 @@
         <p class="role" id="role"></p>
         <p class="pgn" id="pgn"></p>
         <div class="hero-cta">
-          <a class="btn pix" href="#projects">ver jogadas <span>→</span></a>
-          <a class="btn ghost" href="#contact">ping gabriel</a>
+          <a class="btn pix" href="#exp">ver jogadas <span>→</span></a>
+          <button class="btn ghost" data-open-about>sobre mim</button>
         </div>
       </div>
       <div class="kanji" aria-hidden="true">墨流し</div>
     </section>
 
-    <!-- WHOAMI -->
-    <section id="about" data-scene="about" class="panel left">
-      <h2 class="cmd" data-cmd="neofetch"></h2>
-      <div class="glass fetch">
-        <pre class="fetch-info" id="fetch-info"></pre>
-      </div>
-      <div class="glass">
-        <div id="whoami-text" class="lead"></div>
-        <pre class="checklist" id="expertise"></pre>
-      </div>
-    </section>
-
-    <!-- HISTÓRIA -->
-    <section id="history" data-scene="history" class="panel left history">
-      <h2 class="cmd" data-cmd="cat history.md"></h2>
-      <ol class="timeline" id="timeline"></ol>
-    </section>
-
-    <!-- STACK -->
-    <section id="stack" data-scene="stack" class="panel center">
-      <h2 class="cmd" data-cmd="cat stack.md"></h2>
-      <div class="kits" id="stack-board"></div>
-      <p class="mono-note" id="stack-note"></p>
+    <!-- EXPERIÊNCIAS -->
+    <section id="exp" data-scene="exp" class="panel exp">
+      <h2 class="cmd" data-cmd="ls ./experiencias"></h2>
+      <div class="exp-grid" id="exp-grid"></div>
     </section>
 
     <!-- PROJETOS -->
@@ -98,16 +79,17 @@
 
     <!-- MEDALHAS -->
     <section id="medals" data-scene="medals" class="panel center medals-sec">
-      <h2 class="cmd" data-cmd="cat medals.json | sort -r"></h2>
+      <h2 class="cmd" data-cmd="cat conquistas.json"></h2>
       <div class="tally" id="tally"></div>
       <div class="filters left" id="medal-filters" role="tablist"></div>
       <div class="medals" id="medal-row"></div>
     </section>
 
-    <!-- LOG -->
-    <section id="log" data-scene="log" class="panel center">
-      <h2 class="cmd" data-cmd="tail -f current.log"></h2>
-      <pre class="log glass" id="log-out"></pre>
+    <!-- STACK -->
+    <section id="stack" data-scene="stack" class="panel center">
+      <h2 class="cmd" data-cmd="cat stack.md"></h2>
+      <div class="kits" id="stack-board"></div>
+      <p class="mono-note" id="stack-note"></p>
     </section>
 
     <!-- PIANO -->
@@ -140,6 +122,21 @@
   </main>
 
   <aside class="rail" aria-hidden="true" id="rail"></aside>
+
+  <!-- sobre mim: leitura opcional -->
+  <div class="drawer" id="about" role="dialog" aria-modal="true" aria-label="Sobre mim" hidden>
+    <div class="drawer-panel">
+      <button class="close" id="close-about" aria-label="Fechar">×</button>
+      <h2 class="cmd done-cmd">cat about.md</h2>
+      <div class="glass fetch"><pre class="fetch-info" id="fetch-info"></pre></div>
+      <div id="whoami-text" class="lead"></div>
+      <pre class="checklist" id="expertise"></pre>
+      <h2 class="cmd done-cmd">cat history.md</h2>
+      <ol class="mini-tl" id="timeline"></ol>
+      <h2 class="cmd done-cmd">tail -f current.log</h2>
+      <pre class="log glass" id="log-out"></pre>
+    </div>
+  </div>
 
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal-card" id="modal-card"></div>

@@ -464,6 +464,113 @@ const MODELS = {
     };
   },
 
+  // Samsung: TV com dashboard ao vivo + pacotes de dados entrando (pipeline)
+  tv() {
+    const g = new THREE.Group();
+    at(box(2.6, 1.55, .1, MAT.dark), 0, .95, 0, g);
+    at(new THREE.Mesh(new THREE.PlaneGeometry(2.42, 1.38), MAT.screen), 0, .95, .055, g);
+    at(box(.1, .25, .1, MAT.body), 0, .05, 0, g);
+    at(box(1, .05, .45, MAT.body), 0, -.08, 0, g);
+    const bars = [0, 1, 2, 3, 4, 5].map((i) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(.22, 1, .02), i === 3 ? MAT.accent : MAT.glow);
+      b.geometry.translate(0, .5, 0);
+      return at(b, -.85 + i * .34, .4, .07, g);
+    });
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 24 }, () => new THREE.Vector3())), MAT.edgeA);
+    line.position.z = .08; g.add(line);
+    const pk = [0, 1, 2, 3].map(() => at(box(.1, .1, .1, MAT.accent, false), 0, 0, 0, g));
+    return {
+      group: g, dist: .95, lookY: .7, baseRot: 0,
+      update(t) {
+        bars.forEach((b, i) => { b.scale.y = .15 + .5 * (.5 + .5 * Math.sin(t * 1.3 + i * 1.1)) * (i === 3 ? 1.3 : 1); });
+        const p = line.geometry.attributes.position;
+        for (let i = 0; i < 24; i++) p.setXYZ(i, -1.1 + i * (2.2 / 23), 1.35 + Math.sin(t * 2 + i * .55) * .08 + Math.sin(i * 1.7) * .04, 0);
+        p.needsUpdate = true;
+        pk.forEach((c, i) => {
+          const k = loop(t * .5 + i / 4, 1);
+          c.position.set(-2.4 + k * 1.2, .95 + Math.sin(i * 2) * .4, .3);
+          c.scale.setScalar(k < .9 ? 1 : (1 - k) * 10);
+          c.rotation.set(t * 2, t * 3, 0);
+        });
+      }
+    };
+  },
+
+  // Sidia: celular com testes passando (check / x)
+  phone() {
+    const g = new THREE.Group();
+    const body = at(box(.95, 1.9, .1, MAT.dark), 0, .95, 0, g);
+    at(new THREE.Mesh(new THREE.PlaneGeometry(.82, 1.68), MAT.screen), 0, .95, .056, g);
+    at(new THREE.Mesh(new THREE.CircleGeometry(.03, 10), MAT.metal), 0, 1.74, .057, g);
+    const rows = [0, 1, 2, 3, 4].map((i) => {
+      const r = new THREE.Group(); at(r, -.3, 1.48 - i * .3, .06, g);
+      const mark = at(new THREE.Mesh(new THREE.BoxGeometry(.1, .1, .01), MAT.glow), 0, 0, 0, r);
+      const bar = new THREE.Mesh(new THREE.PlaneGeometry(.45, .05), MAT.glow); bar.geometry.translate(.225, 0, 0);
+      at(bar, .12, 0, 0, r);
+      return { r, mark, bar };
+    });
+    return {
+      group: g, dist: .9, lookY: .9, baseRot: .2,
+      update(t) {
+        const n = Math.floor(t * 1.4) % 7;
+        rows.forEach(({ mark, bar }, i) => {
+          const done = i < n;
+          mark.material = done ? (i === 2 ? MAT.accent : MAT.glow) : MAT.body;
+          mark.rotation.z = done ? Math.PI / 4 : 0;
+          bar.scale.x = done ? 1 : .35;
+        });
+        body.rotation.z = Math.sin(t * .8) * .03;
+      }
+    };
+  },
+
+  // Fundação Muraki: janela de navegador sendo testada por um cursor (Selenium)
+  checklist() {
+    const g = new THREE.Group();
+    at(box(2.4, 1.6, .06, MAT.dark), 0, .9, 0, g);
+    at(new THREE.Mesh(new THREE.PlaneGeometry(2.4, .16), MAT.body), 0, 1.62, .035, g);
+    [-1.05, -.95, -.85].forEach((x) => at(new THREE.Mesh(new THREE.CircleGeometry(.03, 8), MAT.accent), x, 1.62, .04, g));
+    const fields = [0, 1, 2].map((i) => at(box(1.3, .16, .02, MAT.body, false), -.3, 1.25 - i * .32, .04, g));
+    const btn = at(box(.6, .2, .03, MAT.light, false), -.65, .3, .045, g);
+    const checks = [0, 1, 2].map((i) => at(new THREE.Mesh(new THREE.BoxGeometry(.12, .12, .02), MAT.glow), .65, 1.25 - i * .32, .05, g));
+    const cur = new THREE.Shape(); cur.moveTo(0, 0); cur.lineTo(0, -.22); cur.lineTo(.06, -.16); cur.lineTo(.12, -.26); cur.lineTo(.15, -.24); cur.lineTo(.09, -.14); cur.lineTo(.16, -.14); cur.lineTo(0, 0);
+    const cursor = at(new THREE.Mesh(new THREE.ShapeGeometry(cur), MAT.light), 0, 0, .1, g);
+    return {
+      group: g, dist: .95, lookY: .85, baseRot: 0,
+      update(t) {
+        const p = loop(t, 4), step = Math.min(4, Math.floor(p));
+        const targets = [[-.3, 1.25], [-.3, .93], [-.3, .61], [-.65, .3], [-.65, .3]];
+        const [a, b] = [targets[step], targets[Math.min(4, step + 1)]];
+        const k = Math.min(1, (p % 1) * 2);
+        cursor.position.set(a[0] + (b[0] - a[0]) * k + .1, a[1] + (b[1] - a[1]) * k - .02, .1);
+        fields.forEach((f, i) => (f.material = i < step ? MAT.light : MAT.body));
+        checks.forEach((c, i) => { c.visible = step >= 3 && p > 3.3 + i * .15; c.material = i === 1 && Math.floor(t / 4) % 2 ? MAT.accent : MAT.glow; });
+        btn.scale.setScalar(step === 3 && k > .9 ? .92 : 1);
+      }
+    };
+  },
+
+  // UEA: capelo de formatura sobre livros
+  cap() {
+    const g = new THREE.Group();
+    [[1.5, .22, 1.0, 0, .11, 0, MAT.body], [1.35, .2, .95, .05, .33, 0, MAT.light], [1.45, .2, .9, -.04, .53, 0, MAT.accent]]
+      .forEach(([w, h, d, x, y, z, m]) => at(box(w, h, d, m), x, y, z, g));
+    const capG = new THREE.Group(); at(capG, 0, 1.0, 0, g);
+    at(box(1.4, .06, 1.4, MAT.dark), 0, .2, 0, capG).rotation.y = Math.PI / 4;
+    at(new THREE.Mesh(new THREE.CylinderGeometry(.42, .48, .3, 16), MAT.dark), 0, 0, 0, capG);
+    const tassel = new THREE.Group(); at(tassel, 0, .24, 0, capG);
+    const cord = new THREE.Mesh(new THREE.BoxGeometry(.65, .02, .02), MAT.accent); cord.geometry.translate(.32, 0, 0); tassel.add(cord);
+    const hang = at(new THREE.Mesh(new THREE.CylinderGeometry(.04, .06, .35, 6), MAT.accent), .65, -.17, 0, tassel);
+    return {
+      group: g, dist: .85, lookY: .7,
+      update(t) {
+        capG.position.y = 1.0 + Math.abs(Math.sin(t * 1.2)) * .25;
+        capG.rotation.y = t * .6;
+        hang.rotation.z = Math.sin(t * 2.4) * .3;
+      }
+    };
+  },
+
   // Curso de embarcados: protoboard + LED piscando
   blink() {
     const g = new THREE.Group();

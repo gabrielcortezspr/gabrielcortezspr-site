@@ -277,3 +277,49 @@ export const currentLog = [
   ['based', 'manaus · amazonas · brasil'],
   ['open to', 'problemas de automação, dados e ia para construir do zero']
 ];
+
+// Experiências: cada uma é um objeto 3D clicável (modelo em models.js)
+export const experiences = [
+  {
+    id: 'samsung', org: 'Samsung Electronics', role: 'Software Engineer', period: 'fev 2026 → agora', model: 'tv', now: true,
+    short: 'automação, dados e IA para a produção de TVs',
+    text: 'Software interno e automação para a engenharia de produção de TVs na Visual Display Division, da ideia e dos requisitos até o deploy e a adoção.',
+    facts: ['pipelines de dados em tempo real com telemetria da linha', 'dashboards usados pela liderança no Brasil e na Coreia', 'ferramentas Python adotadas pelo time de engenharia', 'RPA em sistemas legados sem API', 'modelos de ML sobre dados de fábrica'],
+    tags: ['Python', 'FastAPI', 'Flask', 'SQL', 'Pandas', 'Scikit-Learn', 'Selenium', 'OpenCV']
+  },
+  {
+    id: 'kacto', org: 'Kacto', role: 'Cofundador & Dev de IA', period: 'out 2025 → fev 2026', model: 'chat',
+    short: 'agente de atendimento com IA em produção',
+    text: 'Startup de atendimento com IA do programa Ocean Launch. Agente conversacional com GPT-4o atendendo clínicas, com pipeline RAG e avaliação contínua.',
+    facts: ['em produção em 3 clínicas', 'RAG com embeddings e busca vetorial no Supabase', 'testes de regressão, adversarial testing e detecção de alucinação'],
+    tags: ['GPT-4o', 'RAG', 'Supabase', 'n8n', 'Python']
+  },
+  {
+    id: 'sidia', org: 'Sidia', role: 'Estagiário de QA', period: 'fev 2025 → fev 2026', model: 'phone',
+    short: 'QA de dispositivos Samsung Galaxy',
+    text: 'Quality Assurance de software embarcado em Android num programa global: testes funcionais, de integração e regressão, validando firmware, sistema e apps.',
+    facts: ['comportamentos regulatórios', 'investigação por logs com o time de engenharia na Coreia'],
+    tags: ['Android', 'QA', 'Logs', 'Regressão']
+  },
+  {
+    id: 'muraki', org: 'Fundação Muraki', role: 'Desenvolvedor de Testes', period: 'set 2024 → dez 2024', model: 'checklist',
+    short: 'automação de testes web e de API',
+    text: 'Testes automatizados em Java com Selenium e JUnit, testes de API no Postman e cenários BDD com Cucumber, em ambiente ágil.',
+    facts: ['testes de interface com Selenium + JUnit', 'cenários BDD com Cucumber'],
+    tags: ['Java', 'Selenium', 'JUnit', 'Postman', 'Cucumber']
+  },
+  {
+    id: 'fapeam', org: 'FAPEAM · SENAI', role: 'Pesquisa em Embarcados', period: 'ago 2024 → jul 2025', model: 'greenhouse',
+    short: 'estufa automatizada com FPGA',
+    text: 'Bolsa de pesquisa: estufa automatizada com FPGA Cyclone IV em Verilog, com sensores, controle de atuadores e comunicação hardware-software.',
+    facts: ['apresentada no Chip in the Jungle, evento científico internacional'],
+    tags: ['Verilog', 'FPGA', 'Cyclone IV', 'Sensores']
+  },
+  {
+    id: 'uea', org: 'UEA', role: 'Engenharia de Computação', period: '2022 → 2027', model: 'cap',
+    short: 'graduação · Universidade do Estado do Amazonas',
+    text: 'Processamento de imagens, computação gráfica, sistemas distribuídos e ciência de dados. Cursos paralelos em microeletrônica (CI Amazônia), embarcados (FPF Tech) e STEM Academy.',
+    facts: ['formatura prevista para dez 2027'],
+    tags: ['C/C++', 'OpenGL', 'gRPC', 'Ciência de Dados']
+  }
+];
