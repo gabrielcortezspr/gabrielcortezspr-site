@@ -26,6 +26,7 @@ const INK_FRAG = /* glsl */`
   uniform vec2  uRes;
   uniform vec2  uMouse;
   uniform float uStir;
+  uniform float uIter;
   uniform vec3  uDrops[8];
   varying vec2 vUv;
 
@@ -49,6 +50,7 @@ const INK_FRAG = /* glsl */`
 
     float amp = 0.5 + uStir * 0.12;
     for (float i = 1.0; i < 30.0; i++) {
+      if (i > uIter) break;
       uv.x += amp / i * cos(i * 4.0 * uv.y + t);
       uv.y += amp / i * cos(i * 3.0 * uv.x + t);
     }
@@ -122,15 +124,26 @@ const POSITION = {
   black: { a8:'r', c8:'b', d8:'q', e8:'k', f8:'b', g8:'n', h8:'r', c6:'n', a7:'p', b7:'p', c7:'p', d7:'p', e5:'p', f7:'p', g7:'p', h7:'p' }
 };
 
+// A história é jogada no tabuleiro: variante da troca da Ruy Lopez,
+// 3...a6 4.Bxc6 dxc6 5.O-O f6 6.d4 exd4 7.Nxd4 c5 8.Nb3 Qxd1 9.Rxd1 Bg4
+// 10.f3 Be6 11.Nc3 Bd6 12.Be3 b6 13.a4  (20 meios-lances, 2 por marco)
+export const GAME = [
+  [['a7', 'a6']], [['b5', 'c6']], [['d7', 'c6']], [['e1', 'g1'], ['h1', 'f1']],
+  [['f7', 'f6']], [['d2', 'd4']], [['e5', 'd4']], [['f3', 'd4']],
+  [['c6', 'c5']], [['d4', 'b3']], [['d8', 'd1']], [['f1', 'd1']],
+  [['c8', 'g4']], [['f2', 'f3']], [['g4', 'e6']], [['b1', 'c3']],
+  [['f8', 'd6']], [['c1', 'e3']], [['b7', 'b6']], [['a2', 'a4']]
+];
+
 // estados de câmera/tabuleiro por seção
 const STATES = {
   hero:     { ascii: 0, cam: [0, 10, 17],    look: [0, 0, 0],   off: [4.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
   about:    { ascii: 0, cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
-  history:  { ascii: 0, cam: [0, 17, 9.5],   look: [0, 0, 0.4], off: [5.2, 0, 0],  rotY: 0.0,   sink: 1,   dim: 0.1,  spin: 0 },
-  stack:    { ascii: 0, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0.08 },
-  projects: { ascii: 0, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.12 },
+  history:  { ascii: 0, cam: [0, 13, 10.5],  look: [0, 0, 0.3], off: [5, 0, 0],    rotY: 0.0,   sink: 0,   dim: 0.05, spin: 0, game: 1 },
+  stack:    { ascii: 0, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0 },
+  projects: { ascii: 0, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.03 },
   medals:   { ascii: 0, cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },
-  log:      { ascii: 0, cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0.05 },
+  log:      { ascii: 0, cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0 },
   piano:    { ascii: 0, cam: [-7, 10.5, -10.5], look: [-5.2, -0.8, -30], off: [0, -0.5, 0], rotY: 0.2, sink: 1, dim: 0.05, spin: 0.04, piano: 1 },
   piano_m:  { ascii: 0, cam: [0, 15, -9], look: [0, -4.5, -30], off: [0, -0.5, 0], rotY: 0.2, sink: 1, dim: 0.05, spin: 0.04, piano: 1 },
   contact:  { ascii: 0, cam: [2, 8, 14],     look: [0, 0.5, 0], off: [4.6, 0, 0],  rotY: -0.2,  sink: 0,   dim: 0.1,  spin: 0, resign: 1 }
@@ -157,7 +170,7 @@ export function createScene(canvas) {
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // a gama é aplicada no pós
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let pixel = innerWidth < 760 ? 3 : 4;
+  let pixel = 4;
   let W = innerWidth, H = innerHeight;
   const mobile = () => W < 900;
 
@@ -168,7 +181,7 @@ export function createScene(canvas) {
   // fundo de tinta
   const inkUniforms = {
     uTime: { value: 0 }, uRes: { value: new THREE.Vector2() }, uMouse: { value: new THREE.Vector2(9, 9) },
-    uStir: { value: 0 }, uDrops: { value: Array.from({ length: 8 }, () => new THREE.Vector3(0, 0, -100)) }
+    uStir: { value: 0 }, uIter: { value: innerWidth < 760 ? 16 : 29 }, uDrops: { value: Array.from({ length: 8 }, () => new THREE.Vector3(0, 0, -100)) }
   };
   const inkScene = new THREE.Scene();
   inkScene.add(new THREE.Mesh(quadGeo, new THREE.ShaderMaterial({ vertexShader: FULLSCREEN_VERT, fragmentShader: INK_FRAG, uniforms: inkUniforms, depthWrite: false })));
@@ -242,16 +255,18 @@ export function createScene(canvas) {
   const accentMat = new THREE.MeshStandardMaterial({ color: 0xe0443a, emissive: 0xe0443a, emissiveIntensity: .6 });
 
   const pieces = [];
-  let heroKnight, blackKing;
+  const at = {};
+  let blackKing;
   for (const side of ['white', 'black']) {
     for (const [s, type] of Object.entries(POSITION[side])) {
       if (!type) continue;
       const p = buildPiece(type, side === 'white' ? whiteMat : blackMat, accentMat);
       p.position.copy(sqPos(s));
       p.rotation.y = side === 'white' ? Math.PI / 2 : -Math.PI / 2;
-      p.userData = { base: p.position.clone(), delay: Math.random() * .6, sink: 0 };
+      p.userData = { pos: p.position.clone(), home: s, side, type, delay: Math.random() * .6, anim: null, alive: true };
       board.add(p);
-      if (side === 'white' && s === 'f3') heroKnight = p; else pieces.push(p);
+      pieces.push(p);
+      at[s] = p;
       if (side === 'black' && type === 'k') blackKing = p;
     }
   }
@@ -321,29 +336,67 @@ export function createScene(canvas) {
   pianoLight.position.set(8, 5, -34);
   scene.add(pianoLight);
 
-  // rastro do cavalo (L como no banner do README)
-  const trailMat = new THREE.LineBasicMaterial({ color: 0xf2f2f2, transparent: true, opacity: .85 });
-  const trail = new THREE.Line(new THREE.BufferGeometry(), trailMat);
-  trail.position.y = .13;
-  board.add(trail);
-  const trailPts = [];
-
-  const hop = { from: sqPos('f3'), to: sqPos('f3'), t: 1, current: 'f3' };
-  function knightTo(square, withTrail = true) {
-    if (square === hop.current) return;
-    const a = sq(hop.current), b = sq(square);
-    hop.from = heroKnight.position.clone(); hop.from.y = .1;
-    hop.to = sqPos(square); hop.t = 0;
-    if (withTrail) {
-      if (!trailPts.length) trailPts.push(sqPos(hop.current));
-      const corner = Math.abs(b.f - a.f) === 2 ? new THREE.Vector3(b.f - 3.5, .1, 3.5 - a.r) : new THREE.Vector3(a.f - 3.5, .1, 3.5 - b.r);
-      trailPts.push(corner, sqPos(square));
-      trail.geometry.setFromPoints(trailPts.map((p) => new THREE.Vector3(p.x, 0, p.z)));
-    }
-    squares[hop.current].userData.visited = 1;
-    hop.current = square;
+  // ── motor da partida ───────────────────────────────────────────
+  let ply = 0;
+  const done = [];               // pilha para voltar lances
+  const tray = { white: 0, black: 0 };
+  let lastMove = [];
+  function trayPos(side, n) {     // peças capturadas ficam ao lado do tabuleiro
+    const x = side === 'white' ? -5.1 : 5.1;
+    return new THREE.Vector3(x, .1, (side === 'white' ? 3.2 : -3.2) + (side === 'white' ? -1 : 1) * n * .75);
   }
-  function clearTrail() { trailPts.length = 0; trail.geometry.setFromPoints([]); Object.values(squares).forEach((s) => (s.userData.visited = 0)); }
+  function animate(p, to, opts = {}) {
+    p.userData.anim = { from: p.userData.pos.clone(), to: to.clone(), t: 0, arc: opts.arc ?? (p.userData.type === 'n' ? 1.3 : .35), last: !!opts.last, dur: opts.dur ?? .65 };
+  }
+  function place(p, to) { p.userData.anim = null; p.userData.pos.copy(to); }
+  function doPly(i, anim) {
+    const moves = GAME[i], rec = { moves, captured: null };
+    const [from0, to0] = moves[0];
+    const cap = at[to0];
+    if (cap) {
+      rec.captured = { p: cap, sq: to0 };
+      delete at[to0];
+      const tp = trayPos(cap.userData.side, tray[cap.userData.side]++);
+      anim ? animate(cap, tp, { arc: 2.2, dur: .8 }) : place(cap, tp);
+    }
+    moves.forEach(([f, t], k) => {
+      const p = at[f]; if (!p) return;
+      delete at[f]; at[t] = p;
+      anim ? animate(p, sqPos(t), { last: k === 0 }) : place(p, sqPos(t));
+    });
+    lastMove = [from0, to0];
+    done.push(rec);
+  }
+  function undoPly(anim) {
+    const rec = done.pop(); if (!rec) return;
+    [...rec.moves].reverse().forEach(([f, t]) => {
+      const p = at[t]; if (!p) return;
+      delete at[t]; at[f] = p;
+      anim ? animate(p, sqPos(f)) : place(p, sqPos(f));
+    });
+    if (rec.captured) {
+      const { p, sq: s } = rec.captured;
+      tray[p.userData.side]--;
+      at[s] = p;
+      anim ? animate(p, sqPos(s), { arc: 2.2, dur: .8 }) : place(p, sqPos(s));
+    }
+    const prev = done[done.length - 1];
+    lastMove = prev ? [prev.moves[0][0], prev.moves[0][1]] : [];
+  }
+  function setPly(n) {
+    n = Math.max(0, Math.min(GAME.length, n));
+    if (n === ply) return;
+    const anim = Math.abs(n - ply) <= 2;
+    while (ply < n) { doPly(ply, anim); ply++; }
+    while (ply > n) { undoPly(anim); ply--; }
+  }
+  // partida automática (comando `play`)
+  let tourTimer = null;
+  function tour(on = true) {
+    clearInterval(tourTimer);
+    if (!on) return;
+    tourTimer = setInterval(() => setPly(ply >= GAME.length ? 0 : ply + 1), 900);
+  }
 
   // estado interpolado
   const cur = structuredClone(STATES.hero);
@@ -353,7 +406,10 @@ export function createScene(canvas) {
   const api = {};
   let stir = 0, lastScroll = scrollY, dropIdx = 0, resign = 0;
 
+  let lastW = 0, lastH = 0;
   function resize() {
+    if (innerWidth === lastW && Math.abs(innerHeight - lastH) < 160) return;
+    lastW = innerWidth; lastH = innerHeight;
     W = innerWidth; H = innerHeight;
     renderer.setSize(W, H, false);
     const lw = Math.ceil(W / pixel), lh = Math.ceil(H / pixel);
@@ -375,6 +431,7 @@ export function createScene(canvas) {
   function dropAtWorld(v) { const p = v.clone(); board.localToWorld(p); p.project(camera); drop(p.x, p.y); }
 
   addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
     mouse.set((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1);
   }, { passive: true });
 
@@ -392,21 +449,6 @@ export function createScene(canvas) {
     if (hit) hit.object.userData.heat = 1;
   });
 
-  // tour do cavalo (easter egg / comando `play`)
-  let tourTimer = null;
-  function tour(on = true) {
-    clearInterval(tourTimer);
-    if (!on) return;
-    const moves = [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
-    tourTimer = setInterval(() => {
-      const { f, r } = sq(hop.current);
-      const opts = moves.map(([df, dr]) => [f + df, r + dr]).filter(([a, b]) => a >= 0 && a < 8 && b >= 0 && b < 8)
-        .map(([a, b]) => FILES[a] + (b + 1)).filter((s) => !squares[s].userData.visited);
-      const next = opts.length ? opts[Math.floor(Math.random() * opts.length)] : (clearTrail(), 'f3');
-      knightTo(next);
-    }, 650);
-  }
-
   const clock = new THREE.Clock();
   const tmpV = new THREE.Vector3();
   const lerp = (a, b, k) => a + (b - a) * k;
@@ -414,44 +456,42 @@ export function createScene(canvas) {
   function frame_() {
     const dt = Math.min(clock.getDelta(), .05);
     const t = clock.elapsedTime;
-    const k = 1 - Math.pow(.025, dt);
+    const k = 1 - Math.pow(.12, dt);
 
     cur.ascii = lerp(cur.ascii ?? 0, asciiForce ?? target.ascii ?? 0, k * 1.4);
     for (const key of ['rotY', 'sink', 'dim', 'spin']) cur[key] = lerp(cur[key], target[key], k);
     for (const key of ['cam', 'look', 'off']) for (let i = 0; i < 3; i++) cur[key][i] = lerp(cur[key][i], target[key][i], k);
     resign = lerp(resign, target.resign || 0, k * .6);
 
-    const sv = scrollY - lastScroll; lastScroll = scrollY;
-    stir = lerp(stir, Math.min(Math.abs(sv) / 40, 3), .08);
-    mouseSmooth.lerp(mouse, .08);
+    mouseSmooth.lerp(mouse, .04);
 
     // tabuleiro como carta: inclina para o mouse e flutua
     const offX = mobile() ? 0 : cur.off[0];
-    root.position.set(offX, cur.off[1] + Math.sin(t * .7) * .12, cur.off[2]);
-    board.rotation.y = cur.rotY + (reduced ? 0 : t * cur.spin) + mouseSmooth.x * .12;
-    board.rotation.x = -mouseSmooth.y * .08 + Math.sin(t * .5) * .015;
-    board.rotation.z = mouseSmooth.x * .04;
+    root.position.set(offX, cur.off[1] + Math.sin(t * .5) * .08, cur.off[2]);
+    board.rotation.y = cur.rotY + (reduced ? 0 : t * cur.spin) + mouseSmooth.x * .08;
+    board.rotation.x = -mouseSmooth.y * .05 + Math.sin(t * .4) * .01;
+    board.rotation.z = mouseSmooth.x * .025;
 
     const camBack = mobile() ? 1.35 : 1;
     camera.position.set(cur.cam[0] * camBack, cur.cam[1] * camBack, cur.cam[2] * camBack);
     camera.lookAt(tmpV.set(cur.look[0] + (mobile() ? 0 : offX * .15), cur.look[1], cur.look[2]));
 
     for (const p of pieces) {
-      const s = Math.max(0, Math.min(1, cur.sink * 1.6 - p.userData.delay));
-      p.position.y = p.userData.base.y - s * 1.4;
+      const u = p.userData;
+      if (u.anim) {
+        const a = u.anim;
+        a.t = Math.min(1, a.t + dt / a.dur);
+        const e = a.t < .5 ? 2 * a.t * a.t : 1 - Math.pow(-2 * a.t + 2, 2) / 2;
+        u.pos.lerpVectors(a.from, a.to, e);
+        u.pos.y = a.to.y + Math.sin(Math.PI * a.t) * a.arc;
+        if (a.t === 1) {
+          u.anim = null;
+          if (a.last) { const n = squares[lastMove[1]]; if (n) n.userData.heat = 1; dropAtWorld(a.to); api.onMove?.(ply); }
+        }
+      }
+      const s = Math.max(0, Math.min(1, cur.sink * 1.6 - u.delay));
+      p.position.set(u.pos.x, u.pos.y - s * 1.4, u.pos.z);
       p.visible = s < .99;
-    }
-
-    // salto do cavalo
-    if (hop.t < 1) {
-      hop.t = Math.min(1, hop.t + dt / .7);
-      const e = hop.t < .5 ? 2 * hop.t * hop.t : 1 - Math.pow(-2 * hop.t + 2, 2) / 2;
-      heroKnight.position.lerpVectors(hop.from, hop.to, e);
-      heroKnight.position.y = .1 + Math.sin(Math.PI * hop.t) * 1.8;
-      heroKnight.rotation.y = Math.PI / 2 + Math.sin(Math.PI * hop.t) * .6;
-      if (hop.t === 1) { squares[hop.current].userData.heat = 1; dropAtWorld(hop.to); api.onHop?.(hop.current); }
-    } else {
-      heroKnight.position.y = .1 + Math.abs(Math.sin(t * 2.2)) * .06;
     }
 
     // teclas do piano
@@ -466,25 +506,20 @@ export function createScene(canvas) {
 
     // rei preto abandona: 1-0
     blackKing.rotation.z = resign * 1.45;
-    blackKing.position.y = .1 + resign * .25;
-    blackKing.position.x = blackKing.userData.base.x + resign * .4;
+    blackKing.position.y += resign * .25;
+    blackKing.position.x += resign * .4;
 
     for (const s of Object.values(squares)) {
       const u = s.userData;
       u.heat = Math.max(0, u.heat - dt * .6);
-      const isCur = s.userData.name === hop.current && cur.sink > .5;
-      s.material.emissive.setRGB(
-        .9 * u.heat + (isCur ? .45 : 0) + u.visited * .05,
-        .26 * u.heat + u.visited * .05,
-        .23 * u.heat + u.visited * .05
-      );
+      const isLast = lastMove.includes(u.name) && cur.sink < .5;
+      s.material.emissive.setRGB(.9 * u.heat + (isLast ? .32 : 0), .26 * u.heat + (isLast ? .07 : 0), .23 * u.heat + (isLast ? .06 : 0));
     }
-    trailMat.opacity = .25 + cur.sink * .6;
 
     inkUniforms.uTime.value = reduced ? t * .25 : t;
     const [mx, my] = ndcToInk(mouseSmooth.x, mouseSmooth.y);
     inkUniforms.uMouse.value.set(mx, my);
-    inkUniforms.uStir.value = stir;
+    inkUniforms.uStir.value = 0;
     postUniforms.uTime.value = t;
     postUniforms.uDim.value = cur.dim + (mobile() ? .25 : 0);
     postUniforms.uAscii.value = cur.ascii < 0.02 ? 0 : cur.ascii;
@@ -518,10 +553,11 @@ export function createScene(canvas) {
     get ascii() { return asciiForce; },
     setSection(name) {
       target = (mobile() && STATES[name + '_m']) || STATES[name] || STATES.hero;
-      if (name === 'hero' || name === 'contact') { clearTrail(); knightTo(name === 'hero' ? 'f3' : 'g5', false); }
+      if (name === 'hero' || name === 'about') setPly(0);
+      if (name === 'contact') setPly(GAME.length);
     },
-    knightTo,
-    clearTrail,
+    setPly,
+    get ply() { return ply; },
     drop,
     tour,
     setPixel(n) { pixel = Math.max(1, Math.min(12, n | 0)); resize(); return pixel; },

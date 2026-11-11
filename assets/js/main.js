@@ -23,7 +23,7 @@ async function boot() {
     '<b>ready.</b> good luck, have fun'
   ];
   const sceneP = import('./scene.js')
-    .then((m) => { scene = m.createScene($('#gl')); scene.onHop = onHop; scene.onKey = (k) => pianoHit(k); })
+    .then((m) => { scene = m.createScene($('#gl')); scene.onMove = onMove; scene.onKey = (k) => pianoHit(k); })
     .catch((e) => { console.warn('WebGL indisponível', e); document.body.classList.add('no-gl'); });
   for (let i = 0; i < lines.length; i++) {
     log.innerHTML += lines[i] + '\n';
@@ -37,9 +37,10 @@ async function boot() {
 }
 
 // ── som ───────────────────────────────────────────────────────
-function onHop(square) {
-  const i = history.findIndex((h) => h.square === square);
-  if (i >= 0) note(SCALE[(i + 2) % SCALE.length], 0.45, 2.6);
+// cada lance jogado no tabuleiro toca uma nota
+function onMove(ply) {
+  note(SCALE[(ply + 3) % SCALE.length], 0.4, 2.4);
+  renderScore(ply);
 }
 
 function soundUI() {
@@ -101,17 +102,34 @@ function about() {
   io.observe(ex);
 }
 
-// ── história ──────────────────────────────────────────────────
+// ── história: cada marco joga dois meios-lances no tabuleiro ──
+const SAN = ['a6', 'Bxc6', 'dxc6', 'O-O', 'f6', 'd4', 'exd4', 'Nxd4', 'c5', 'Nb3', 'Qxd1', 'Rxd1', 'Bg4', 'f3', 'Be6', 'Nc3', 'Bd6', 'Be3', 'b6', 'a4'];
+function renderScore(ply) {
+  const el = $('#score'); if (!el) return;
+  // súmula: 1.e4 e5 2.Nf3 Nc6 3.Bb5 já jogados; depois 3...a6 4.Bxc6 ...
+  let html = '<span class="pl">1.e4 e5 2.Nf3 Nc6 3.Bb5</span>';
+  SAN.forEach((m, i) => {
+    const moveNo = 3 + Math.floor((i + 1) / 2);
+    const white = i % 2 === 1;
+    const num = white ? `<span class="n">${moveNo}.</span>` : (i === 0 ? '<span class="n">3…</span>' : '');
+    const cls = i < ply - 1 ? 'pl' : i === ply - 1 ? 'cur' : 'todo';
+    html += ` ${num}<span class="${cls}">${m}</span>`;
+  });
+  el.innerHTML = html;
+}
 function timeline() {
   const ol = $('#timeline');
   ol.innerHTML = history.map((h, i) => `
-    <li data-i="${i}" data-square="${h.square}">
-      <div class="sq">${h.square}</div>
-      <div class="meta"><span class="mv">${esc(h.move)}</span><span>${esc(h.year)}</span></div>
-      <h3>${esc(h.title)}</h3>
-      <p class="place">${esc(h.place)}</p>
-      <p class="body">${esc(h.text)}</p>
+    <li data-i="${i}">
+      <div class="when"><b>${esc(h.year)}</b><span>${String(i + 1).padStart(2, '0')}/${history.length}</span></div>
+      <div class="what">
+        <p class="mv">${esc(h.move)}</p>
+        <h3>${esc(h.title)}</h3>
+        <p class="place">${esc(h.place)}</p>
+        <p class="body">${esc(h.text)}</p>
+      </div>
     </li>`).join('');
+  renderScore(0);
   const items = $$('li', ol);
   let active = -1;
   const io = new IntersectionObserver((entries) => {
@@ -119,44 +137,35 @@ function timeline() {
       if (!e.isIntersecting) return;
       const i = +e.target.dataset.i;
       if (i === active) return;
-      if (i < active && scene) scene.clearTrail();
       active = i;
-      items.forEach((li, j) => li.classList.toggle('active', j === i));
-      if (scene) {
-        if (i === 0) scene.clearTrail();
-        scene.knightTo(e.target.dataset.square, i > 0);
-      }
+      items.forEach((li, j) => { li.classList.toggle('active', j === i); li.classList.toggle('past', j < i); });
+      scene?.setPly((i + 1) * 2);
+      renderScore((i + 1) * 2);
     });
   }, { rootMargin: '-45% 0px -45% 0px' });
   items.forEach((li) => io.observe(li));
 }
 
-// ── stack board ───────────────────────────────────────────────
+// ── stack: o que eu faço com cada grupo de tecnologia ─────────
 function stackBoard() {
   const b = $('#stack-board');
-  let html = '', n = 0;
-  stack.forEach((row, r) => {
-    html += `<div class="rowlbl">${esc(row.row)}</div>`;
-    row.items.forEach((it, c) => {
-      html += `<div class="tile ${(r + c) % 2 ? 'alt' : ''}" style="--d:${(n++) * 40}ms" data-n="${r * 2 + c}" tabindex="0">${esc(it.toUpperCase())}</div>`;
-    });
-  });
-  html += '<div></div>' + 'abcde'.split('').map((l) => `<div class="collbl">${l}</div>`).join('');
-  b.innerHTML = html;
-  const tiles = $$('.tile', b);
-  tiles.forEach((t) => t.addEventListener('pointerenter', () => note(SCALE[+t.dataset.n % SCALE.length], 0.25, 1.4)));
+  b.innerHTML = stack.map((g, i) => `
+    <article class="kit" style="--d:${i * 90}ms">
+      <header><span class="file">${'abcde'[i]}</span><h3>${esc(g.title)}</h3></header>
+      <p class="kit-what">${esc(g.what)}</p>
+      <ul class="kit-items">${g.items.map((it) => `<li>${esc(it)}</li>`).join('')}</ul>
+      <p class="kit-where"><span class="dim">usado em</span> ${esc(g.where)}</p>
+    </article>`).join('');
+  const kits = $$('.kit', b);
+  kits.forEach((k, i) => k.addEventListener('pointerenter', () => note(SCALE[(i * 2 + 4) % SCALE.length], 0.22, 1.6)));
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    tiles.forEach((t) => t.classList.add('in'));
-    let i = 0;
-    setInterval(() => {
-      tiles.forEach((t) => t.classList.remove('sweep'));
-      tiles[i++ % tiles.length].classList.add('sweep');
-    }, 260);
-  }, { threshold: .25 });
+    kits.forEach((k) => k.classList.add('in'));
+  }, { threshold: .15 });
   io.observe(b);
-  $('#stack-note').textContent = `${tiles.length}/${tiles.length} modules loaded · no bad moves detected`;
+  const n = stack.reduce((a, g) => a + g.items.length, 0);
+  $('#stack-note').textContent = `${n} ferramentas · ${stack.length} frentes · todas usadas em projeto real`;
 }
 
 // ── cartas de projeto ─────────────────────────────────────────
@@ -258,18 +267,22 @@ function closeModal() { $('#modal').hidden = true; modalModel?.destroy(); modalM
 const TIER = { gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', trophy: 'troféu', seal: 'evento' };
 function medalRow() {
   const row = $('#medal-row');
-  row.innerHTML = medals.map((m, i) => `
-    <div class="medal ${m.tier}" tabindex="0" data-cat="${m.cat}" style="--d:${i * 90}ms">
-      <div class="ribbon"></div>
-      <div class="coin stamp">
-        <div class="side front">${esc(m.glyph)}</div>
-        <div class="side back">${m.year}<br>${esc(TIER[m.tier])}</div>
+  // vitrine: medalhas penduradas, agrupadas por ano
+  const years = [...new Set(medals.map((m) => m.year))].sort((a, b) => b - a);
+  let k = 0;
+  row.innerHTML = years.map((y) => `
+    <div class="year" data-year="${y}">
+      <h4 class="y">${y}</h4>
+      <div class="hang">
+        ${medals.map((m, i) => ({ m, i })).filter(({ m }) => m.year === y).map(({ m, i }) => `
+          <button class="medal ${m.tier}" data-i="${i}" data-cat="${m.cat}" style="--d:${(k++) * 80}ms; --sw:${(i % 3) * .4}s" aria-label="${esc(m.title)}: ${esc(m.sub)}">
+            <span class="ribbon"></span>
+            <span class="coin"><span class="side">${esc(m.glyph)}</span></span>
+            <span class="lbl"><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></span>
+          </button>`).join('')}
       </div>
-      <h4>${esc(m.title)}</h4>
-      <small>${esc(m.sub)} · ${m.year}</small>
     </div>`).join('');
 
-  // placar
   const counts = {};
   medals.forEach((m) => { counts[m.tier] = (counts[m.tier] || 0) + 1; });
   const LBL = { trophy: 'troféu', gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', seal: 'eventos' };
@@ -282,21 +295,21 @@ function medalRow() {
     const b = e.target.closest('button'); if (!b) return;
     $$('button', filt).forEach((x) => x.setAttribute('aria-selected', x === b));
     $$('.medal', row).forEach((m) => m.hidden = !(b.dataset.f === 'all' || m.dataset.cat === b.dataset.f));
+    $$('.year', row).forEach((y) => y.hidden = !$$('.medal', y).some((m) => !m.hidden));
   });
 
-  const io = new IntersectionObserver(async ([e]) => {
+  const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
     $$('.medal', row).forEach((el, i) => {
       el.classList.add('in');
-      setTimeout(() => note(SCALE[4 + (i % 10)], 0.18, 1.2), i * 90 + 300);
+      setTimeout(() => note(SCALE[4 + (i % 10)], 0.16, 1.2), i * 80 + 300);
     });
-  }, { threshold: .2 });
+  }, { threshold: .15 });
   io.observe(row);
-  $$('.medal', row).forEach((el, i) => {
-    const open = () => openMedal(medals[i]);
-    el.addEventListener('click', open);
-    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  $$('.medal', row).forEach((el) => {
+    el.addEventListener('pointerenter', () => note(SCALE[9 + (+el.dataset.i % 4)], 0.14, 1.4));
+    el.addEventListener('click', () => openMedal(medals[+el.dataset.i]));
   });
 }
 
@@ -308,14 +321,15 @@ async function openMedal(m) {
   $('#ms-tier').textContent = TIER_PT[m.tier] || '';
   $('#ms-title').textContent = m.title;
   $('#ms-sub').textContent = `${m.sub} · ${m.year}`;
+  $('#ms-desc').textContent = m.desc || '';
   st.hidden = false;
   document.body.style.overflow = 'hidden';
   if (!medalStageP) {
     medalStageP = import('./medal3d.js').then((mod) => {
       medalStage = mod.createMedalStage($('#medal-canvas'), {
-        onImpact: (v) => note([86, 90, 93, 98][Math.floor(Math.random() * 4)], 0.15 + v * 0.45, 1.6)
+        onChime: (v) => note([86, 90, 93, 98][Math.floor(Math.random() * 4)], 0.12 + v * 0.4, 1.8)
       });
-      $('#ms-drop').addEventListener('click', () => medalStage.drop());
+      $('#ms-drop').addEventListener('click', () => medalStage.spin());
       $('#ms-close').addEventListener('click', closeMedal);
     });
   }
@@ -467,7 +481,7 @@ function terminal(pianoApi) {
       '  piano | satie       toca gymnopédie nº1',
       '  sound               liga/desliga o som',
       '  pixel <1-12>        tamanho do pixel do tabuleiro',
-      '  ink · play · stop   tinta / tour do cavalo',
+      '  ink · play · stop   tinta / partida automática',
       '  history | stack | contact   vai até a seção',
       '  clear · exit'
     ].join('\n')),
@@ -483,7 +497,7 @@ function terminal(pianoApi) {
     ascii: (a) => { if (!scene) return print('webgl indisponível', 'e'); const v = a === 'off' ? null : 1; scene.setAscii(v); print(`ascii = ${v ? 'on' : 'off'} (easter egg)`); },
     pixel: (a) => { if (!scene) return print('webgl indisponível', 'e'); print(`pixel = ${scene.setPixel(+a || 4)}`); },
     ink: () => { if (scene) for (let i = 0; i < 4; i++) setTimeout(() => { scene.drop((Math.random() - .5) * 1.6, (Math.random() - .5) * 1.4); note(SCALE[i * 2], 0.3, 2.5); }, i * 180); print('墨 ~ ~ ~'); },
-    play: () => { scene?.tour(true); print('tour do cavalo iniciado ♞ (stop para parar)'); },
+    play: () => { scene?.tour(true); go('history'); print('partida automática ♞ (stop para parar)'); },
     stop: () => { scene?.tour(false); stopSong(); print('ok.'); },
     sudo: (a, all) => print(/hire/.test(all) ? 'permissão concedida ✓  →  ' + esc(profile.links.email) : 'gabriel is not in the sudoers file. this incident will be reported.', /hire/.test(all) ? 'c' : 'e'),
     clear: () => { out.innerHTML = ''; },

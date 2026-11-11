@@ -81,14 +81,15 @@
     <!-- HISTÓRIA -->
     <section id="history" data-scene="history" class="panel left history">
       <h2 class="cmd" data-cmd="cat history.pgn"></h2>
-      <p class="sub">cada marco é um lance: observe o cavalo saltar (e, com o som ligado, tocar).</p>
+      <p class="sub">a história é jogada no tabuleiro: cada marco são dois lances da variante da troca da Ruy Lopez. Role para cima e a partida volta.</p>
+      <div class="score" id="score" aria-label="Súmula da partida"></div>
       <ol class="timeline" id="timeline"></ol>
     </section>
 
     <!-- STACK -->
     <section id="stack" data-scene="stack" class="panel center">
-      <h2 class="cmd" data-cmd="cat stack.board"></h2>
-      <div class="board-ui" id="stack-board"></div>
+      <h2 class="cmd" data-cmd="cat stack.md"></h2>
+      <div class="kits" id="stack-board"></div>
       <p class="mono-note" id="stack-note"></p>
     </section>
 
@@ -100,7 +101,7 @@
     </section>
 
     <!-- MEDALHAS -->
-    <section id="medals" data-scene="medals" class="panel right">
+    <section id="medals" data-scene="medals" class="panel center medals-sec">
       <h2 class="cmd" data-cmd="cat medals.json | sort -r"></h2>
       <div class="tally" id="tally"></div>
       <div class="filters left" id="medal-filters" role="tablist"></div>
@@ -154,15 +155,16 @@
   </div>
 
   <div class="medal-stage" id="medal-stage" role="dialog" aria-modal="true" aria-labelledby="ms-title" hidden>
-    <canvas id="medal-canvas" aria-label="Medalha 3D: arraste para pegar, solte para jogar"></canvas>
+    <canvas id="medal-canvas" aria-label="Medalha 3D suspensa: arraste para girar e balançar"></canvas>
     <div class="ms-info">
       <p class="ms-tier" id="ms-tier"></p>
       <h3 id="ms-title"></h3>
       <p class="ms-sub" id="ms-sub"></p>
+      <p class="ms-desc" id="ms-desc"></p>
     </div>
     <div class="ms-ctl">
-      <span class="ms-hint">arraste para pegar · solte para jogar · toque no tabuleiro para chacoalhar</span>
-      <button class="btn ghost" id="ms-drop">↻ soltar de novo</button>
+      <span class="ms-hint">arraste para girar e balançar · ela fica pendurada pela fita</span>
+      <button class="btn ghost" id="ms-drop">↻ girar</button>
       <button class="btn pix" id="ms-close">fechar ×</button>
     </div>
   </div>
