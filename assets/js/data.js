@@ -114,10 +114,10 @@ export const stack = [
   { row: 'qa', items: ['Selenium', 'JUnit', 'Postman', 'Cucumber', 'Git·Linux'] }
 ];
 
-// rarity: common | uncommon | rare | legendary  ·  ascii: cena em assets/js/ascii.js
+// rarity: common | uncommon | rare | legendary  ·  model: modelo 3D em assets/js/models.js
 export const projects = [
   {
-    id: 'narrater', name: 'NarraTer', rarity: 'legendary', icon: 'nodes', ascii: 'narrater',
+    id: 'narrater', name: 'NarraTer', rarity: 'legendary', model: 'narrater',
     tagline: 'Orquestrador open source de agentes',
     text: 'App para Linux em que terminais com agentes de vários fornecedores (Claude Code, Codex, Gemini CLI) viram nós num canvas infinito, e as arestas definem quem pode falar com quem. Protocolo que não exige cooperação do agente: entrega pelo terminal e lê o fim do turno pela tela e pelo transcript.',
     facts: ['7 versões do protocolo comparadas em benchmark próprio', 'respostas antes da hora: 0 de 40', 'custo por tarefa: US$ 1,02 → US$ 0,65', 'agente sozinho 2,5× mais rápido e 7× menos tokens na tarefa sequencial'],
@@ -125,7 +125,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/NarraTer'
   },
   {
-    id: 'prolink', name: 'Pro-Link', rarity: 'legendary', icon: 'seal', ascii: 'trophy',
+    id: 'prolink', name: 'Pro-Link', rarity: 'legendary', model: 'trophy',
     tagline: 'Campeão · CREA-AM · II CENATEC 2026',
     text: 'Marketplace que conecta profissionais registrados no CREA a empresas, com um motor de evidências que cruza a demanda do serviço com o acervo técnico (ART/CAT) do profissional. Desempate com aleatoriedade auditável, sem pontuação oculta, e LGPD como parte do produto.',
     facts: ['líder da equipe vencedora', '138 verificações automatizadas do portfólio', 'HTTPS, Docker e suíte e2e'],
@@ -133,7 +133,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/Pro-link-4951'
   },
   {
-    id: 'busflow', name: 'BusFlow', rarity: 'rare', icon: 'bus', ascii: 'esp32',
+    id: 'busflow', name: 'BusFlow', rarity: 'rare', model: 'esp32',
     tagline: 'Contagem de passageiros com IoT',
     text: 'Firmware do ESP32 com sensores de proximidade que conta passageiros na borda de subida e publica via MQTT; API Node/TypeScript + Prisma persiste o histórico em PostgreSQL; app iOS conta pessoas com YOLOv3.',
     facts: ['finalista estadual da Liga Jovem 2025', 'ESP32 + 2× HC-SR04 + PIR', 'Mosquitto · Express · Prisma · Next.js'],
@@ -141,7 +141,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/BusFlow-ESP32'
   },
   {
-    id: 'fpga', name: 'Estufa FPGA', rarity: 'rare', icon: 'chip', ascii: 'greenhouse',
+    id: 'fpga', name: 'Estufa FPGA', rarity: 'rare', model: 'greenhouse',
     tagline: 'Pesquisa FAPEAM · SENAI',
     text: 'Estufa automatizada com FPGA Cyclone IV em Verilog: leitura de sensores, controle de atuadores, monitoramento ambiental e comunicação hardware-software.',
     facts: ['apresentada no Chip in the Jungle (evento científico internacional)', 'bolsa de pesquisa FAPEAM · ago 2024 – jul 2025'],
@@ -149,7 +149,7 @@ export const projects = [
     url: null
   },
   {
-    id: 'kacto', name: 'Kacto', rarity: 'rare', icon: 'brain', ascii: 'chat',
+    id: 'kacto', name: 'Kacto', rarity: 'rare', model: 'chat',
     tagline: 'Agente de atendimento para clínicas',
     text: 'Agente conversacional com GPT-4o para atendimento automatizado de clínicas. Pipeline RAG: chunking da base de conhecimento, embeddings e indexação vetorial no Supabase. Avaliação com testes de regressão, adversarial testing, detecção de alucinação e guardrails.',
     facts: ['em produção em 3 clínicas', 'startup do programa Ocean Launch', 'n8n + Python para automação de fluxos'],
@@ -157,7 +157,7 @@ export const projects = [
     url: null
   },
   {
-    id: 'chess', name: 'Tabletop', rarity: 'rare', icon: 'knight', ascii: 'knight',
+    id: 'chess', name: 'Tabletop', rarity: 'rare', model: 'knight',
     tagline: 'Xadrez & Go em pixel art',
     text: 'Mesa de xadrez e Go em Python com shaders no estilo Balatro: tabuleiro-carta em pseudo-3D, fundo de tinta em redemoinho, CRT, capturas que explodem em pixels. Regras oficiais completas e contagem chinesa/japonesa no Go.',
     facts: ['modo livre: monte qualquer posição e jogue a partir dela', 'pontuação automática e placar de partidas'],
@@ -165,7 +165,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/Chess-Tabletop'
   },
   {
-    id: 'suminagashi', name: 'Suminagashi', rarity: 'uncommon', icon: 'ink', ascii: 'ink',
+    id: 'suminagashi', name: 'Suminagashi', rarity: 'uncommon', model: 'ink',
     tagline: '墨流し em GLSL',
     text: 'Shader que replica a arte japonesa de pintar sobre a água: distorções harmônicas recursivas sobre UV, em escala de cinza. É o fundo vivo deste site: clique em qualquer lugar para pingar tinta.',
     facts: ['30 iterações de distorção cosseno', 'aqui reescrito em ASCII, caractere por caractere'],
@@ -173,7 +173,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/shader-suminagashi'
   },
   {
-    id: 'eda', name: 'EDA Netflix', rarity: 'uncommon', icon: 'gpu', ascii: 'bars',
+    id: 'eda', name: 'EDA Netflix', rarity: 'uncommon', model: 'bars',
     tagline: 'Ciência de Dados · UEA',
     text: 'Análise exploratória de duas bases do Kaggle (catálogo da Netflix, 8.807 títulos; desempenho de 1.000 estudantes), com perguntas próprias que cruzam variáveis, como a defasagem dos títulos adicionados e o efeito combinado de curso preparatório e almoço subsidiado.',
     facts: ['8.807 títulos · 1.000 estudantes', 'pandas + Matplotlib'],
@@ -181,7 +181,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/Ciencia-de-Dados'
   },
   {
-    id: 'prediction', name: 'Review Stars', rarity: 'uncommon', icon: 'brain', ascii: 'nlp',
+    id: 'prediction', name: 'Review Stars', rarity: 'uncommon', model: 'nlp',
     tagline: 'NLP · classificação 1–5',
     text: 'Pipeline híbrido de n-gramas de palavra e caractere com features numéricas e LinearSVC regularizado. Companheiro do classificador de gênero em 128 mil reviews B2W.',
     facts: ['word 1–2 + char_wb 3–5 n-grams', 'ColumnTransformer + LinearSVC'],
@@ -189,7 +189,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/Prediction-Challenge-2026'
   },
   {
-    id: 'web', name: 'Freelance Web', rarity: 'uncommon', icon: 'gear', ascii: 'browser',
+    id: 'web', name: 'Freelance Web', rarity: 'uncommon', model: 'browser',
     tagline: 'Sites & design · desde ago 2026',
     text: 'Criação e manutenção de sites para empresas e profissionais, como Grupo Shamar (segurança e terceirização) e Horizont Rec (produção audiovisual), além de artes e posts para empresas de eventos e buffet.',
     facts: ['Grupo Shamar', 'Horizont Rec'],
@@ -197,7 +197,7 @@ export const projects = [
     url: null
   },
   {
-    id: 'opengl', name: 'GPU/CPU Bench', rarity: 'common', icon: 'gpu', ascii: 'triangles',
+    id: 'opengl', name: 'GPU/CPU Bench', rarity: 'common', model: 'triangles',
     tagline: 'Desempenho em OpenGL',
     text: 'Renderização de milhares de triângulos girando com iluminação e texturas, monitoramento de CPU/GPU e relatórios gerados em Python.',
     facts: ['C++ · GLFW · GLEW', 'análise em pandas + matplotlib'],
@@ -205,7 +205,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/Teste-de-desempenho-de-GPU-CPU-com-OpenGL'
   },
   {
-    id: 'grpc', name: 'gRPC Calc', rarity: 'common', icon: 'gear', ascii: 'grpc',
+    id: 'grpc', name: 'gRPC Calc', rarity: 'common', model: 'grpc',
     tagline: 'Calculadora distribuída',
     text: 'Serviço gRPC stateless com interceptors de log, validação de entrada (divisão por zero) e testes com grpcurl.',
     facts: ['chamadas unárias · Add, Sub, Mul, Div'],
@@ -213,7 +213,7 @@ export const projects = [
     url: 'https://github.com/gabrielcortezspr/grpc'
   },
   {
-    id: 'embarcados', name: 'Curso Embarcados', rarity: 'common', icon: 'chip', ascii: 'blink',
+    id: 'embarcados', name: 'Curso Embarcados', rarity: 'common', model: 'blink',
     tagline: 'ESP32 & Arduino',
     text: 'Curso prático do básico à IoT: interrupções, timers, JSON, brokers MQTT. Tudo em PlatformIO.',
     facts: ['básico · intermediário · iot'],

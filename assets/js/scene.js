@@ -6,6 +6,7 @@
 //            aberração cromática, scanlines e curvatura CRT (vibe Balatro)
 // ════════════════════════════════════════════════════════════════
 import * as THREE from 'three';
+import { buildPiece } from './models.js';
 
 const FILES = 'abcdefgh';
 const sq = (s) => ({ f: FILES.indexOf(s[0]), r: +s[1] - 1 });
@@ -115,52 +116,6 @@ const POST_FRAG = /* glsl */`
   }
 `;
 
-// ── peças ───────────────────────────────────────────────────────
-const V = (r, y) => new THREE.Vector2(r, y);
-const PROFILES = {
-  p: [V(0,0),V(.38,0),V(.38,.07),V(.30,.13),V(.26,.17),V(.18,.23),V(.13,.48),V(.22,.53),V(.22,.57),V(.12,.60),V(.18,.67),V(.21,.76),V(.18,.86),V(.10,.92),V(0,.94)],
-  b: [V(0,0),V(.38,0),V(.38,.07),V(.30,.12),V(.26,.16),V(.18,.22),V(.12,.62),V(.22,.67),V(.22,.71),V(.12,.74),V(.17,.84),V(.19,.96),V(.15,1.07),V(.08,1.14),V(.05,1.16),V(.07,1.20),V(0,1.24)],
-  r: [V(0,0),V(.40,0),V(.40,.08),V(.32,.14),V(.28,.20),V(.22,.62),V(.32,.67),V(.32,.90),V(.24,.90),V(.24,.84),V(0,.84)],
-  q: [V(0,0),V(.40,0),V(.40,.08),V(.31,.14),V(.27,.19),V(.18,.26),V(.12,.78),V(.24,.83),V(.24,.87),V(.14,.90),V(.20,1.10),V(.27,1.22),V(.18,1.20),V(.10,1.24),V(0,1.25)],
-  k: [V(0,0),V(.40,0),V(.40,.08),V(.31,.14),V(.27,.19),V(.18,.26),V(.13,.84),V(.25,.89),V(.25,.93),V(.15,.96),V(.22,1.16),V(.25,1.26),V(0,1.26)],
-  base: [V(0,0),V(.38,0),V(.38,.08),V(.31,.14),V(.27,.20),V(.20,.24),V(0,.24)]
-};
-
-function knightHead() {
-  const pts = [[-.30,0],[.32,0],[.28,.22],[.22,.42],[.30,.60],[.38,.80],[.36,.96],[.25,1.10],[.12,1.18],[.07,1.30],[-.01,1.19],[-.15,1.12],[-.32,1.00],[-.46,.86],[-.49,.76],[-.41,.69],[-.25,.73],[-.11,.66],[-.20,.46],[-.30,.24]];
-  const shape = new THREE.Shape();
-  pts.forEach(([x, y], i) => (i ? shape.lineTo(x, y) : shape.moveTo(x, y)));
-  const g = new THREE.ExtrudeGeometry(shape, { depth: .2, bevelEnabled: true, bevelThickness: .05, bevelSize: .04, bevelSegments: 1 });
-  g.translate(0, 0, -.1);
-  g.scale(.62, .62, 1);
-  return g;
-}
-
-function buildPiece(type, mat, accentMat) {
-  const g = new THREE.Group();
-  const add = (geo, m = mat) => { const mesh = new THREE.Mesh(geo, m); mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); return mesh; };
-  if (type === 'n') {
-    add(new THREE.LatheGeometry(PROFILES.base, 20));
-    const head = add(knightHead()); head.position.y = .2;
-    const eye = add(new THREE.BoxGeometry(.06, .06, .3), accentMat); eye.position.set(-.06, .78, 0);
-  } else {
-    add(new THREE.LatheGeometry(PROFILES[type], 20));
-    if (type === 'k') {
-      add(new THREE.BoxGeometry(.07, .26, .07)).position.y = 1.38;
-      add(new THREE.BoxGeometry(.2, .07, .07)).position.y = 1.4;
-    }
-    if (type === 'q') add(new THREE.SphereGeometry(.07, 8, 6)).position.y = 1.3;
-    if (type === 'b') add(new THREE.SphereGeometry(.05, 6, 4)).position.y = 1.24;
-    if (type === 'r') for (let i = 0; i < 4; i++) {
-      const m = add(new THREE.BoxGeometry(.12, .1, .12));
-      const a = i * Math.PI / 2 + Math.PI / 4;
-      m.position.set(Math.cos(a) * .22, .95, Math.sin(a) * .22);
-    }
-  }
-  g.scale.setScalar(.82);
-  return g;
-}
-
 // Ruy Lopez após 3.Bb5 — exatamente o lance do README
 const POSITION = {
   white: { a1:'r', b1:'n', c1:'b', d1:'q', e1:'k', h1:'r', b5:'b', f3:'n', a2:'p', b2:'p', c2:'p', d2:'p', e4:'p', f2:'p', g2:'p', h2:'p', f1: null },
@@ -172,11 +127,12 @@ const STATES = {
   hero:     { ascii: 0, cam: [0, 10, 17],    look: [0, 0, 0],   off: [4.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
   about:    { ascii: 0, cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
   history:  { ascii: 0, cam: [0, 17, 9.5],   look: [0, 0, 0.4], off: [5.2, 0, 0],  rotY: 0.0,   sink: 1,   dim: 0.1,  spin: 0 },
-  stack:    { ascii: 1, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0.08 },
-  projects: { ascii: 1, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.12 },
+  stack:    { ascii: 0, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0.08 },
+  projects: { ascii: 0, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.12 },
   medals:   { ascii: 0, cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },
-  log:      { ascii: 1, cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0.05 },
-  piano:    { ascii: 1, cam: [0, 7, 9], look: [0, 0, 0], off: [0, -0.5, 0], rotY: 0.2, sink: 1, dim: 0.4, spin: 0.04 },
+  log:      { ascii: 0, cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0.05 },
+  piano:    { ascii: 0, cam: [-7, 10.5, -10.5], look: [-5.2, -0.8, -30], off: [0, -0.5, 0], rotY: 0.2, sink: 1, dim: 0.05, spin: 0.04, piano: 1 },
+  piano_m:  { ascii: 0, cam: [0, 15, -9], look: [0, -4.5, -30], off: [0, -0.5, 0], rotY: 0.2, sink: 1, dim: 0.05, spin: 0.04, piano: 1 },
   contact:  { ascii: 0, cam: [2, 8, 14],     look: [0, 0.5, 0], off: [4.6, 0, 0],  rotY: -0.2,  sink: 0,   dim: 0.1,  spin: 0, resign: 1 }
 };
 
@@ -300,6 +256,71 @@ export function createScene(canvas) {
     }
   }
 
+  // ── piano 3D de fundo (como o tabuleiro) ──────────────────────
+  const piano = new THREE.Group();
+  piano.position.set(0, 0, -30);
+  piano.rotation.y = 0.18;
+  scene.add(piano);
+  const pianoKeys = new Map();
+  const isBlack = (m) => [1, 3, 6, 8, 10].includes(m % 12);
+  {
+    const LO = 36, HI = 84;
+    const whites = []; for (let m = LO; m <= HI; m++) if (!isBlack(m)) whites.push(m);
+    const half = (whites.length - 1) / 2;
+    const gW = new THREE.BoxGeometry(.47, .3, 2.6); gW.translate(0, 0, 1.3);
+    const gB = new THREE.BoxGeometry(.28, .34, 1.6); gB.translate(0, 0, .8);
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x0a0a0a, transparent: true, opacity: .6 });
+    for (let m = LO; m <= HI; m++) {
+      const b = isBlack(m);
+      const mat = new THREE.MeshStandardMaterial({ color: b ? 0x161616 : 0xe2e2e2, roughness: b ? .35 : .5, flatShading: true });
+      const k = new THREE.Mesh(b ? gB : gW, mat);
+      const wi = b ? whites.indexOf(m + 1) - .5 : whites.indexOf(m);
+      k.position.set((wi - half) * .5, b ? .2 : 0, -1.3);
+      k.castShadow = k.receiveShadow = true;
+      if (!b) k.add(new THREE.LineSegments(new THREE.EdgesGeometry(gW), edgeMat));
+      k.userData = { midi: m, target: 0, p: 0, black: b, base: mat.color.clone() };
+      pianoKeys.set(m, k);
+      piano.add(k);
+    }
+    const W = whites.length * .5 + .7;
+    const caseMat = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: .35, metalness: .4, flatShading: true });
+    const caseEdge = new THREE.LineBasicMaterial({ color: 0xf2f2f2, transparent: true, opacity: .35 });
+    const part = (w, h, d, x, y, z) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), caseMat);
+      m.position.set(x, y, z); m.receiveShadow = m.castShadow = true;
+      m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), caseEdge));
+      piano.add(m); return m;
+    };
+    part(W, .45, 3.6, 0, -.38, 0);                // base
+    part(W, 1.0, .5, 0, .25, -1.6);               // fundo
+    part(.35, .8, 3.6, -W / 2 + .17, .05, 0);      // laterais
+    part(.35, .8, 3.6, W / 2 - .17, .05, 0);
+    part(W, .08, .2, 0, -.12, 1.42).material = caseMat; // frente
+    // estante com partitura
+    const sheetC = document.createElement('canvas'); sheetC.width = 512; sheetC.height = 256;
+    const sg = sheetC.getContext('2d');
+    sg.fillStyle = '#e8e8e8'; sg.fillRect(0, 0, 512, 256);
+    sg.strokeStyle = '#333'; sg.fillStyle = '#222'; sg.lineWidth = 2;
+    for (const top of [40, 150]) {
+      for (let l = 0; l < 5; l++) { sg.beginPath(); sg.moveTo(20, top + l * 12); sg.lineTo(492, top + l * 12); sg.stroke(); }
+      for (let n = 0; n < 12; n++) {
+        const x = 50 + n * 37, y = top + 6 + ((n * 7 + top) % 9) * 6;
+        sg.beginPath(); sg.ellipse(x, y, 6, 4.5, -.4, 0, Math.PI * 2); sg.fill();
+        sg.fillRect(x + 5, y - 30, 2, 30);
+      }
+    }
+    sg.fillStyle = '#e0443a'; sg.font = 'bold 18px monospace'; sg.fillText('GYMNOPÉDIE Nº1 · SATIE', 150, 24);
+    const sheetT = new THREE.CanvasTexture(sheetC); sheetT.colorSpace = THREE.SRGBColorSpace;
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.1, .05), [caseMat, caseMat, caseMat, caseMat, new THREE.MeshStandardMaterial({ map: sheetT, roughness: .8 }), caseMat]);
+    stand.position.set(0, 1.45, -1.55); stand.rotation.x = -.22;
+    piano.add(stand);
+  }
+  const pianoMeshes = [...pianoKeys.values()];
+  const SEAL = new THREE.Color(0xe0443a);
+  const pianoLight = new THREE.PointLight(0xe0443a, 30, 30, 1.4);
+  pianoLight.position.set(8, 5, -34);
+  scene.add(pianoLight);
+
   // rastro do cavalo (L como no banner do README)
   const trailMat = new THREE.LineBasicMaterial({ color: 0xf2f2f2, transparent: true, opacity: .85 });
   const trail = new THREE.Line(new THREE.BufferGeometry(), trailMat);
@@ -363,6 +384,10 @@ export function createScene(canvas) {
     const n = new THREE.Vector2((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1);
     drop(n.x, n.y);
     ray.setFromCamera(n, camera);
+    if (target.piano) {
+      const k = ray.intersectObjects(pianoMeshes, false)[0];
+      if (k) { api.onKey?.(k.object.userData.midi); return; }
+    }
     const hit = ray.intersectObjects(Object.values(squares), false)[0];
     if (hit) hit.object.userData.heat = 1;
   });
@@ -429,6 +454,16 @@ export function createScene(canvas) {
       heroKnight.position.y = .1 + Math.abs(Math.sin(t * 2.2)) * .06;
     }
 
+    // teclas do piano
+    for (const k of pianoMeshes) {
+      const u = k.userData;
+      u.p += (u.target - u.p) * Math.min(1, dt * 30);
+      k.rotation.x = u.p * (u.black ? .09 : .065);
+      k.material.color.copy(u.base).lerp(SEAL, u.p);
+      k.material.emissive.setRGB(.9 * u.p, .2 * u.p, .15 * u.p);
+    }
+    piano.position.y = Math.sin(t * .6) * .1;
+
     // rei preto abandona: 1-0
     blackKing.rotation.z = resign * 1.45;
     blackKing.position.y = .1 + resign * .25;
@@ -474,10 +509,15 @@ export function createScene(canvas) {
   });
 
   return Object.assign(api, {
+    press(m, on = true) {
+      const k = pianoKeys.get(m); if (!k) return;
+      k.userData.target = on ? 1 : 0;
+      if (on) { const p = new THREE.Vector3(k.position.x, .3, 1.2); piano.localToWorld(p); p.project(camera); drop(p.x, p.y); }
+    },
     setAscii(v) { asciiForce = v; return v; },
     get ascii() { return asciiForce; },
     setSection(name) {
-      target = STATES[name] || STATES.hero;
+      target = (mobile() && STATES[name + '_m']) || STATES[name] || STATES.hero;
       if (name === 'hero' || name === 'contact') { clearTrail(); knightTo(name === 'hero' ? 'f3' : 'g5', false); }
     },
     knightTo,

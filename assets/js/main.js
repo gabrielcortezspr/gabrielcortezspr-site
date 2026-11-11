@@ -1,6 +1,5 @@
 import { profile, history, stack, projects, medals, currentLog } from './data.js';
-import { pixelIcon } from './pixelart.js';
-import { mountAscii, KNIGHT_ART } from './ascii.js';
+import { mountModel } from './models.js';
 import { piano, note, arp, playSong, stopSong, noteName, SCALE } from './piano.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -13,19 +12,18 @@ let scene = null; // carregado de forma preguiçosa; o site funciona sem WebGL
 
 // ── boot ──────────────────────────────────────────────────────
 async function boot() {
-  $('#boot-art').textContent = KNIGHT_ART;
   const log = $('#boot-log'), bar = $('.boot-bar i');
   const lines = [
     '<b>cortez-os</b> v26.11 · build 1-0',
     '[ ok ] mounting /dev/ink (suminagashi.glsl)',
     '[ ok ] loading engine · 64 squares · 32 pieces',
-    '[ ok ] ascii renderer · raymarching 3 sdf models',
-    '[ ok ] piano · 7 partials · reverb 2.6s',
+    '[ ok ] 13 project models · bayer dithering',
+    '[ ok ] piano · 49 keys · 7 partials · reverb 2.6s',
     '[ ok ] 1. e4 e5  2. Nf3 Nc6  3. Bb5',
     '<b>ready.</b> good luck, have fun'
   ];
   const sceneP = import('./scene.js')
-    .then((m) => { scene = m.createScene($('#gl')); scene.onHop = onHop; })
+    .then((m) => { scene = m.createScene($('#gl')); scene.onHop = onHop; scene.onKey = (k) => pianoHit(k); })
     .catch((e) => { console.warn('WebGL indisponível', e); document.body.classList.add('no-gl'); });
   for (let i = 0; i < lines.length; i++) {
     log.innerHTML += lines[i] + '\n';
@@ -49,18 +47,9 @@ function soundUI() {
   const sync = (on) => { b.setAttribute('aria-pressed', on); $('em', b).textContent = on ? 'on' : 'off'; };
   b.addEventListener('click', () => { const on = piano.toggle(); if (on) arp([55, 62, 67, 71, 74], 0.08, 0.35); });
   piano.onChange(sync);
-  const a = $('#ascii-btn');
-  a.addEventListener('click', () => {
-    if (!scene) return;
-    const v = scene.ascii === null ? 1 : scene.ascii === 1 ? 0 : null;
-    scene.setAscii(v);
-    a.setAttribute('aria-pressed', v === 1);
-    a.textContent = v === null ? 'A' : v === 1 ? 'A✓' : 'A✗';
-    a.title = v === null ? 'Modo ASCII: automático por seção' : v === 1 ? 'Modo ASCII: sempre' : 'Modo ASCII: nunca';
-  });
   // gota de tinta no fundo = nota grave
   addEventListener('pointerdown', (e) => {
-    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal,.keys')) return;
+    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal') || inPiano) return;
     note([43, 50, 55, 59, 62][Math.floor(Math.random() * 5)], 0.3, 3);
   });
 }
@@ -97,12 +86,10 @@ function setupCommands() {
 
 // ── whoami / neofetch ─────────────────────────────────────────
 function about() {
-  $('#fetch-art').textContent = KNIGHT_ART;
   const kw = Math.max(...profile.fetch.map(([k]) => k.length));
   $('#fetch-info').innerHTML =
     `<b>gabriel</b><span class="dim">@</span><b>cortez</b>\n<span class="dim">${'─'.repeat(22)}</span>\n` +
-    profile.fetch.map(([k, v]) => `<i class="a">${k.padEnd(kw)}</i>  ${esc(v)}`).join('\n') +
-    '\n\n<span class="swatch"><i style="color:#0a0a0a">███</i><i style="color:#262626">███</i><i style="color:#7a7a7a">███</i><i style="color:#f2f2f2">███</i><i style="color:#e0443a">███</i></span>';
+    profile.fetch.map(([k, v]) => `<i class="a">${k.padEnd(kw)}</i>  ${esc(v)}`).join('\n');
   $('#whoami-text').innerHTML = profile.whoami.map((p) => `<p>${p}</p>`).join('');
   const ex = $('#expertise');
   ex.innerHTML = profile.expertise.map((x) => `<span>[<b>x</b>] ${esc(x)}</span>`).join('');
@@ -174,8 +161,8 @@ function stackBoard() {
 
 // ── cartas de projeto ─────────────────────────────────────────
 const RARITY = { common: 'COMUM', uncommon: 'INCOMUM', rare: 'RARA', legendary: 'LENDÁRIA' };
-const RCOLOR = { common: '#8f9aa6', uncommon: '#4fb3a2', rare: '#e0443a', legendary: '#b267e6' };
-const cardAscii = [];
+const RCOLOR = { common: '#5c5c5c', uncommon: '#9a9a9a', rare: '#e0443a', legendary: '#f2f2f2' };
+const cardModels = [];
 
 function cards() {
   const hand = $('#hand');
@@ -185,7 +172,7 @@ function cards() {
       <div class="inner">
         <div class="face">
           <div class="rar"><span>${RARITY[p.rarity]}</span><span>#${String(i + 1).padStart(2, '0')}</span></div>
-          <div class="art"><pre class="ascii-art" data-ascii="${p.ascii}" aria-hidden="true"></pre></div>
+          <div class="art"><canvas data-model="${p.model}" aria-hidden="true"></canvas></div>
           <h3>${esc(p.name)}</h3>
           <p class="tl">${esc(p.tagline)}</p>
           <div class="chips">${p.tags.slice(0, 3).map((t) => `<span>${esc(t)}</span>`).join('')}</div>
@@ -196,7 +183,7 @@ function cards() {
     </div>`).join('');
 
   const all = $$('.card', hand);
-  $$('.ascii-art', hand).forEach((pre) => cardAscii.push(mountAscii(pre, pre.dataset.ascii, { fps: 12 })));
+  $$('.art canvas', hand).forEach((cv) => cardModels.push(mountModel(cv, cv.dataset.model, { pixel: 3, hoverEl: cv.closest('.card') })));
 
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
@@ -240,31 +227,32 @@ function cards() {
       c.classList.toggle('hide', !show);
       if (show) { c.classList.remove('dealt'); void c.offsetWidth; c.style.setProperty('--deal', `${k++ * 80}ms`); c.classList.add('dealt'); }
     });
-    cardAscii.forEach((a) => a && a.refit());
+    requestAnimationFrame(() => cardModels.forEach((a) => a && a.refit()));
   });
 }
 
-let modalAscii = null;
+let modalModel = null;
 function openProject(id) {
   const p = projects.find((x) => x.id === id); if (!p) return;
   const m = $('#modal'), card = $('#modal-card');
   card.style.setProperty('--c', RCOLOR[p.rarity]);
   card.innerHTML = `
     <button class="close" aria-label="Fechar">×</button>
-    <div class="top-row">${pixelIcon(p.icon)}<div><div class="rar">${RARITY[p.rarity]}</div><h3 id="modal-title">${esc(p.name)}</h3><small class="dim">${esc(p.tagline)}</small></div></div>
-    <pre class="ascii-big" aria-hidden="true"></pre>
+    <div class="top-row"><div><div class="rar">${RARITY[p.rarity]}</div><h3 id="modal-title">${esc(p.name)}</h3><small class="dim">${esc(p.tagline)}</small></div></div>
+    <canvas class="model-big" aria-hidden="true"></canvas>
     <p>${esc(p.text)}</p>
     ${p.facts ? `<ul class="facts">${p.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
     <div class="chips">${p.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
     ${p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">abrir no github <span>→</span></a>` : '<span class="dim">repositório privado · peça uma demo</span>'}`;
   m.hidden = false;
-  modalAscii?.destroy();
-  modalAscii = mountAscii($('.ascii-big', card), p.ascii, { fps: 24, rows: innerWidth < 600 ? 16 : 20 });
+  modalModel?.destroy();
+  const big = $('.model-big', card);
+  modalModel = mountModel(big, p.model, { pixel: 3, spin: .3, hoverEl: big });
   $('.close', card).focus();
   arp([55, 59, 62, 66, 71], 0.07, 0.3, 2.2);
   if (scene) scene.drop((Math.random() - .5) * .6, (Math.random() - .5) * .6);
 }
-function closeModal() { $('#modal').hidden = true; modalAscii?.destroy(); modalAscii = null; }
+function closeModal() { $('#modal').hidden = true; modalModel?.destroy(); modalModel = null; }
 
 // ── medalhas ──────────────────────────────────────────────────
 const TIER = { gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', trophy: 'troféu', seal: 'evento' };
@@ -281,18 +269,11 @@ function medalRow() {
       <small>${esc(m.sub)} · ${m.year}</small>
     </div>`).join('');
 
-  // placar em ASCII
+  // placar
   const counts = {};
   medals.forEach((m) => { counts[m.tier] = (counts[m.tier] || 0) + 1; });
-  const order = ['trophy', 'gold', 'silver', 'bronze', 'honor', 'seal'];
-  const tally = $('#tally');
-  const render = (p) => {
-    tally.innerHTML = '<span class="dim">┌─ placar ──────────────────────┐</span>\n' + order.filter((k) => counts[k]).map((k) => {
-      const n = Math.round(counts[k] * p);
-      return `<span class="dim">│</span> ${TIER[k].padEnd(7)} <i class="t-${k}">${'█'.repeat(n * 2).padEnd(14, '·')}</i> ${String(n).padStart(2)} <span class="dim">│</span>`;
-    }).join('\n') + '\n<span class="dim">└───────────────────────────────┘</span>';
-  };
-  render(0);
+  const LBL = { trophy: 'troféu', gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', seal: 'eventos' };
+  $('#tally').innerHTML = Object.keys(LBL).filter((k) => counts[k]).map((k) => `<span class="t t-${k}"><b>${counts[k]}</b> ${LBL[k]}</span>`).join('');
 
   const filt = $('#medal-filters');
   const cats = [['all', 'TODAS'], ['intl', 'INTERNACIONAIS'], ['nac', 'NACIONAIS'], ['evt', 'COMPETIÇÕES']];
@@ -310,7 +291,6 @@ function medalRow() {
       el.classList.add('in');
       setTimeout(() => note(SCALE[4 + (i % 10)], 0.18, 1.2), i * 90 + 300);
     });
-    for (let k = 1; k <= 20; k++) { render(k / 20); await sleep(reduced ? 0 : 40); }
   }, { threshold: .2 });
   io.observe(row);
   $$('.medal', row).forEach((el) => {
@@ -336,64 +316,37 @@ function tailLog() {
   io.observe(out);
 }
 
-// ── piano ─────────────────────────────────────────────────────
+// ── piano (o teclado é 3D, no fundo) ──────────────────────────
+let inPiano = false;
+const recent = [];
+function renderTracker() {
+  const t = $('#tracker'); if (!t) return;
+  t.innerHTML = `<span class="dim">♩ = 70 · lent et douloureux · G△7 ⇄ D△7</span>\n<b>▸</b> ${
+    recent.slice(-8).map((n, i, a) => i === a.length - 1 ? `<i class="a">${n}</i>` : n).join(' <span class="dim">─</span> ') || '<span class="dim">clique nas teclas do piano…</span>'}`;
+}
+function pianoLight(m, on) {
+  scene?.press(m, on);
+  if (on && m >= 55) { recent.push(noteName(m)); if (recent.length > 30) recent.shift(); renderTracker(); }
+}
+function pianoHit(m) {
+  if (!piano.on) piano.enable();
+  note(m, 0.6, 3);
+  pianoLight(m, true);
+  setTimeout(() => pianoLight(m, false), 240);
+}
 function pianoSection() {
-  const keys = $('#keys'), tracker = $('#tracker');
-  const LO = 36, HI = 84; // C2..C6
-  const isBlack = (m) => [1, 3, 6, 8, 10].includes(m % 12);
-  const KB = 'awsedftgyhujkolp;'; // C4..E5
-  const keyFor = (m) => (m >= 60 && m < 60 + KB.length ? KB[m - 60] : '');
-  const whites = [];
-  for (let m = LO; m <= HI; m++) if (!isBlack(m)) whites.push(m);
-  keys.style.setProperty('--n', whites.length);
-  let html = '';
-  for (let m = LO; m <= HI; m++) {
-    if (isBlack(m)) {
-      const wi = whites.indexOf(m - 1) + 1;
-      html += `<button class="k b" data-m="${m}" style="--i:${wi}" aria-label="${noteName(m)}"><span>${keyFor(m)}</span></button>`;
-    } else {
-      html += `<button class="k w" data-m="${m}" aria-label="${noteName(m)}"><span>${keyFor(m) || (m % 12 === 0 ? noteName(m) : '')}</span></button>`;
-    }
-  }
-  keys.innerHTML = html;
-  const el = (m) => keys.querySelector(`[data-m="${m}"]`);
-  const recent = [];
-  const renderTracker = (now) => {
-    const bar = String(Math.floor(recent.length / 3) + 1).padStart(2, '0');
-    tracker.innerHTML =
-      `<span class="dim">♩ = 70 · lent et douloureux · G△7 ⇄ D△7</span>${' '.repeat(4)}<span class="dim">bar ${bar}</span>\n` +
-      `<b>▸</b> ${recent.slice(-10).map((n, i, a) => i === a.length - 1 ? `<i class="a">${n}</i>` : n).join(' <span class="dim">─</span> ') || '<span class="dim">toque uma tecla…</span>'}`;
-  };
   renderTracker();
-  const light = (m, on) => {
-    const k = el(m); if (k) k.classList.toggle('on', on);
-    if (on && m >= 60) { recent.push(noteName(m)); if (recent.length > 40) recent.shift(); renderTracker(); }
-  };
-  const hit = (m) => { if (!piano.on) piano.enable(); note(m, 0.6, 3); light(m, true); setTimeout(() => light(m, false), 260); };
-
-  keys.addEventListener('pointerdown', (e) => {
-    const k = e.target.closest('.k'); if (!k) return;
-    e.preventDefault(); hit(+k.dataset.m);
-  });
-  keys.addEventListener('pointerover', (e) => {
-    if (e.buttons !== 1) return;
-    const k = e.target.closest('.k'); if (k) hit(+k.dataset.m);
-  });
-
-  let inView = false;
-  new IntersectionObserver(([e]) => { inView = e.isIntersecting; }, { threshold: .3 }).observe($('#piano'));
+  const KB = 'awsedftgyhujkolp;'; // C4..E5
+  new IntersectionObserver(([e]) => { inPiano = e.isIntersecting; }, { rootMargin: '-40% 0px -40% 0px' }).observe($('#piano'));
   addEventListener('keydown', (e) => {
-    if (!inView || e.repeat || e.ctrlKey || e.metaKey || e.target.closest('input')) return;
+    if (!inPiano || e.repeat || e.ctrlKey || e.metaKey || e.target.closest('input')) return;
     const i = KB.indexOf(e.key.toLowerCase());
-    if (i >= 0) hit(60 + i);
+    if (i >= 0) pianoHit(60 + i);
   });
-
-  const play = () => {
-    $('#play-satie').classList.add('playing');
-    playSong(light, () => $('#play-satie').classList.remove('playing'));
-  };
-  $('#play-satie').addEventListener('click', play);
-  $('#stop-satie').addEventListener('click', () => { stopSong(); $$('.k.on', keys).forEach((k) => k.classList.remove('on')); $('#play-satie').classList.remove('playing'); });
+  const btn = $('#play-satie');
+  const play = () => { btn.classList.add('playing'); playSong(pianoLight, () => btn.classList.remove('playing')); };
+  btn.addEventListener('click', play);
+  $('#stop-satie').addEventListener('click', () => { stopSong(); for (let m = 36; m <= 84; m++) scene?.press(m, false); btn.classList.remove('playing'); });
   return { play };
 }
 
@@ -479,7 +432,6 @@ function terminal(pianoApi) {
       '  medals              placar de medalhas',
       '  piano | satie       toca gymnopédie nº1',
       '  sound               liga/desliga o som',
-      '  ascii [on|off|auto] fundo em caracteres',
       '  pixel <1-12>        tamanho do pixel do tabuleiro',
       '  ink · play · stop   tinta / tour do cavalo',
       '  history | stack | contact   vai até a seção',
@@ -494,7 +446,7 @@ function terminal(pianoApi) {
     piano: () => { go('piano'); setTimeout(() => pianoApi.play(), 700); print('♪ Erik Satie · Gymnopédie nº1 (1888)'); },
     satie: () => cmds.piano(),
     sound: () => print(`som ${piano.toggle() ? 'ligado ♪' : 'desligado'}`),
-    ascii: (a) => { if (!scene) return print('webgl indisponível', 'e'); const v = a === 'off' ? 0 : a === 'auto' ? null : 1; scene.setAscii(v); print(`ascii = ${v === null ? 'auto' : v ? 'on' : 'off'}`); },
+    ascii: (a) => { if (!scene) return print('webgl indisponível', 'e'); const v = a === 'off' ? null : 1; scene.setAscii(v); print(`ascii = ${v ? 'on' : 'off'} (easter egg)`); },
     pixel: (a) => { if (!scene) return print('webgl indisponível', 'e'); print(`pixel = ${scene.setPixel(+a || 4)}`); },
     ink: () => { if (scene) for (let i = 0; i < 4; i++) setTimeout(() => { scene.drop((Math.random() - .5) * 1.6, (Math.random() - .5) * 1.4); note(SCALE[i * 2], 0.3, 2.5); }, i * 180); print('墨 ~ ~ ~'); },
     play: () => { scene?.tour(true); print('tour do cavalo iniciado ♞ (stop para parar)'); },
@@ -544,10 +496,9 @@ function modal() {
   m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('.close')) closeModal(); });
 }
 
-function waves() { $$('.ascii-wave').forEach((pre) => mountAscii(pre, 'wave', { fps: 12, rows: 1 })); }
 
 // ── init ──────────────────────────────────────────────────────
-about(); timeline(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); waves(); setupCommands();
+about(); timeline(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); setupCommands();
 const pianoApi = pianoSection();
 terminal(pianoApi);
 boot().then(() => { sections(); hero(); });

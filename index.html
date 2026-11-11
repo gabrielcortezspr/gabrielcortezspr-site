@@ -7,7 +7,7 @@
   <meta name="description" content="Gabriel Cortez — engenharia de software, IA aplicada, dados e sistemas embarcados. Samsung, Kacto, NarraTer, campeão do Desafio Pro-Link." />
   <meta name="theme-color" content="#0a0a0a" />
   <meta property="og:title" content="Gabriel Cortez — software engineer" />
-  <meta property="og:description" content="ai · automation · data — xadrez digital × suminagashi × ascii" />
+  <meta property="og:description" content="ai · automation · data — xadrez digital × suminagashi × piano" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,7 +23,6 @@
 
   <!-- boot -->
   <div id="boot" aria-hidden="true">
-    <pre class="boot-art" id="boot-art"></pre>
     <pre id="boot-log"></pre>
     <div class="boot-bar"><i></i></div>
   </div>
@@ -43,7 +42,6 @@
     </nav>
     <div class="tools">
       <button class="term-btn" id="sound-btn" aria-pressed="false" title="Som (piano)"><span>♪</span><em>off</em></button>
-      <button class="term-btn" id="ascii-btn" aria-pressed="false" title="Modo ASCII no fundo">A</button>
       <button class="term-btn" id="open-term" title="Terminal (tecla ~)"><span>&gt;_</span></button>
     </div>
   </header>
@@ -68,13 +66,10 @@
       <div class="kanji" aria-hidden="true">墨流し</div>
     </section>
 
-    <pre class="ascii-wave" aria-hidden="true"></pre>
-
     <!-- WHOAMI -->
     <section id="about" data-scene="about" class="panel left">
       <h2 class="cmd" data-cmd="neofetch"></h2>
       <div class="glass fetch">
-        <pre class="fetch-art" id="fetch-art" aria-hidden="true"></pre>
         <pre class="fetch-info" id="fetch-info"></pre>
       </div>
       <div class="glass">
@@ -82,8 +77,6 @@
         <pre class="checklist" id="expertise"></pre>
       </div>
     </section>
-
-    <pre class="ascii-wave" aria-hidden="true"></pre>
 
     <!-- HISTÓRIA -->
     <section id="history" data-scene="history" class="panel left history">
@@ -109,7 +102,7 @@
     <!-- MEDALHAS -->
     <section id="medals" data-scene="medals" class="panel right">
       <h2 class="cmd" data-cmd="cat medals.json | sort -r"></h2>
-      <pre class="tally glass" id="tally"></pre>
+      <div class="tally" id="tally"></div>
       <div class="filters left" id="medal-filters" role="tablist"></div>
       <div class="medals" id="medal-row"></div>
     </section>
@@ -121,20 +114,18 @@
     </section>
 
     <!-- PIANO -->
-    <section id="piano" data-scene="piano" class="panel center">
+    <section id="piano" data-scene="piano" class="panel left piano">
       <h2 class="cmd" data-cmd="./piano --satie"></h2>
-      <div class="piano-wrap glass">
+      <div class="glass piano-card">
+        <p class="lead-s">Entre um lance e outro, piano. Clique nas teclas do piano 3D ao fundo ou use <kbd>a</kbd> <kbd>w</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>d</kbd>… <kbd>;</kbd></p>
         <pre class="tracker" id="tracker" aria-live="off"></pre>
-        <div class="keys-scroll"><div class="keys" id="keys" role="group" aria-label="Teclado de piano"></div></div>
         <div class="piano-ctl">
           <button class="btn pix" id="play-satie">▶ gymnopédie nº1</button>
           <button class="btn ghost" id="stop-satie">■ parar</button>
-          <span class="dim tiny-k">teclado: <kbd>a</kbd><kbd>w</kbd><kbd>s</kbd><kbd>e</kbd><kbd>d</kbd>… <kbd>;</kbd> · Erik Satie, 1888 (domínio público)</span>
         </div>
+        <p class="tiny-k dim">Erik Satie, 1888 · domínio público · sintetizado em Web Audio</p>
       </div>
     </section>
-
-    <pre class="ascii-wave" aria-hidden="true"></pre>
 
     <!-- CONTATO -->
     <section id="contact" data-scene="contact" class="panel left contact">
