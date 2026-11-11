@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gabriel Cortez</title>
+  <meta name="description" content="Gabriel Cortez — software engineer · ai · automation · data. Samsung Electronics (VD), co-fundador da Kacto Services." />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta property="og:title" content="Gabriel Cortez — software engineer" />
+  <meta property="og:description" content="ai · automation · data — xadrez digital × suminagashi" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Silkscreen:wght@400;700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- boot -->
+  <div id="boot" aria-hidden="true">
+    <pre id="boot-log"></pre>
+    <div class="boot-bar"><i></i></div>
+  </div>
+
+  <!-- relógio de xadrez = progresso de rolagem -->
+  <div class="clock" aria-hidden="true"><i id="clock-bar"></i></div>
+
+  <header class="top">
+    <a href="#hero" class="brand" data-glitch="GC">GC<span class="blink">_</span></a>
+    <nav class="moves" aria-label="Seções">
+      <a href="#about"><b>1.</b> whoami</a>
+      <a href="#history"><b>2.</b> história</a>
+      <a href="#stack"><b>3.</b> stack</a>
+      <a href="#projects"><b>4.</b> projetos</a>
+      <a href="#medals"><b>5.</b> medalhas</a>
+      <a href="#contact"><b>6.</b> ping</a>
+    </nav>
+    <button class="term-btn" id="open-term" title="Terminal (tecla ~)"><span>&gt;_</span></button>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section id="hero" data-scene="hero" class="hero">
+      <div class="hero-inner">
+        <p class="prompt"><span class="dim">$</span> whoami</p>
+        <h1 class="name" aria-label="Gabriel Cortez">
+          <span class="type" id="type-name"></span><span class="cursor"></span>
+        </h1>
+        <p class="role" id="role"></p>
+        <p class="pgn" id="pgn"></p>
+        <div class="hero-cta">
+          <a class="btn pix" href="#projects">ver jogadas <span>→</span></a>
+          <a class="btn ghost" href="#contact">ping gabriel</a>
+        </div>
+        <p class="hint">clique no fundo para pingar tinta · <kbd>~</kbd> abre o terminal</p>
+      </div>
+      <div class="scroll-cue" aria-hidden="true"><span>scroll</span><i></i></div>
+      <div class="kanji" aria-hidden="true">墨流し</div>
+    </section>
+
+    <!-- WHOAMI -->
+    <section id="about" data-scene="about" class="panel left">
+      <h2 class="cmd" data-cmd="cat about.md"></h2>
+      <div class="glass">
+        <div id="whoami-text" class="lead"></div>
+        <pre class="checklist" id="expertise"></pre>
+      </div>
+    </section>
+
+    <!-- HISTÓRIA -->
+    <section id="history" data-scene="history" class="panel left history">
+      <h2 class="cmd" data-cmd="cat history.pgn"></h2>
+      <p class="sub">cada marco é um lance — observe o cavalo saltar pelo tabuleiro.</p>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <!-- STACK -->
+    <section id="stack" data-scene="stack" class="panel center">
+      <h2 class="cmd" data-cmd="cat stack.board"></h2>
+      <div class="board-ui" id="stack-board"></div>
+      <p class="mono-note" id="stack-note">20/20 modules loaded · no bad moves detected</p>
+    </section>
+
+    <!-- PROJETOS -->
+    <section id="projects" data-scene="projects" class="panel center">
+      <h2 class="cmd" data-cmd="ls ./projects --deal"></h2>
+      <div class="filters" id="filters" role="tablist"></div>
+      <div class="hand" id="hand"></div>
+    </section>
+
+    <!-- MEDALHAS -->
+    <section id="medals" data-scene="medals" class="panel right">
+      <h2 class="cmd" data-cmd="cat medals.json"></h2>
+      <div class="medals" id="medal-row"></div>
+    </section>
+
+    <!-- LOG -->
+    <section id="log" data-scene="log" class="panel center">
+      <h2 class="cmd" data-cmd="tail -f current.log"></h2>
+      <pre class="log glass" id="log-out"></pre>
+    </section>
+
+    <!-- CONTATO -->
+    <section id="contact" data-scene="contact" class="panel left contact">
+      <h2 class="cmd" data-cmd="ping gabriel"></h2>
+      <div class="glass">
+        <pre class="ping" id="ping-out"></pre>
+        <div class="links" id="links"></div>
+      </div>
+      <footer class="end">
+        <p class="result">1-0 <span class="dim">·</span> good game<span class="blink">▌</span></p>
+        <blockquote id="quote"></blockquote>
+        <p class="tiny">© <span id="year"></span> Gabriel Cortez · feito com three.js, glsl e tinta digital</p>
+      </footer>
+    </section>
+  </main>
+
+  <!-- trilho lateral de casas (navegação) -->
+  <aside class="rail" aria-hidden="true" id="rail"></aside>
+
+  <!-- modal de projeto -->
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-card" id="modal-card"></div>
+  </div>
+
+  <!-- terminal -->
+  <div class="term" id="term" hidden>
+    <div class="term-head"><span>gabriel@cortez: ~</span><button id="close-term" aria-label="Fechar terminal">×</button></div>
+    <pre class="term-out" id="term-out"></pre>
+    <label class="term-in"><span>$</span><input id="term-input" autocomplete="off" spellcheck="false" aria-label="Comando" /></label>
+  </div>
+
+  <noscript><p style="padding:2rem;color:#f2f2f2">Ative o JavaScript para ver o tabuleiro 3D.</p></noscript>
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

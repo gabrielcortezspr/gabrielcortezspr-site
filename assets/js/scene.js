@@ -1,0 +1,454 @@
+// ════════════════════════════════════════════════════════════════
+//  scene.js — um único canvas WebGL fixo atrás do site.
+//  camada 1: shader suminagashi (fundo de tinta, reage ao mouse/cliques)
+//  camada 2: tabuleiro 3D com a posição da Ruy Lopez (1.e4 e5 2.Nf3 Nc6 3.Bb5)
+//  pós:      renderiza em baixa resolução → pixelado, dithering Bayer,
+//            aberração cromática, scanlines e curvatura CRT (vibe Balatro)
+// ════════════════════════════════════════════════════════════════
+import * as THREE from 'three';
+
+const FILES = 'abcdefgh';
+const sq = (s) => ({ f: FILES.indexOf(s[0]), r: +s[1] - 1 });
+const sqPos = (s) => { const { f, r } = sq(s); return new THREE.Vector3(f - 3.5, 0.1, 3.5 - r); };
+
+// ── shaders ─────────────────────────────────────────────────────
+const FULLSCREEN_VERT = /* glsl */`
+  varying vec2 vUv;
+  void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+
+// shader-suminagashi (github.com/gabrielcortezspr/shader-suminagashi)
+// + atração do mouse + gotas de tinta concêntricas nos cliques
+const INK_FRAG = /* glsl */`
+  precision highp float;
+  uniform float uTime;
+  uniform vec2  uRes;
+  uniform vec2  uMouse;
+  uniform float uStir;
+  uniform vec3  uDrops[8];
+  varying vec2 vUv;
+
+  void main(){
+    vec2 frag = vUv * uRes;
+    vec2 uv = (2.0 * frag - uRes) / min(uRes.x, uRes.y);
+    float t = uTime / 12.0;
+
+    vec2 dm = uv - uMouse;
+    uv += dm * 0.22 * exp(-dot(dm, dm) * 2.5);
+
+    for (int k = 0; k < 8; k++) {
+      vec3 d = uDrops[k];
+      float age = uTime - d.z;
+      if (age < 0.0 || age > 9.0) continue;
+      vec2 dir = uv - d.xy;
+      float dist = length(dir);
+      float ring = sin(dist * 16.0 - age * 4.0) * exp(-dist * 1.2) * exp(-age * 0.45);
+      uv += (dir / (dist + 1e-3)) * ring * 0.10;
+    }
+
+    float amp = 0.5 + uStir * 0.12;
+    for (float i = 1.0; i < 30.0; i++) {
+      uv.x += amp / i * cos(i * 4.0 * uv.y + t);
+      uv.y += amp / i * cos(i * 3.0 * uv.x + t);
+    }
+
+    float b = 1.0 - abs(sin(t - uv.x - uv.y));
+    float line = pow(b, 7.0);
+    vec3 col = vec3(0.039) + vec3(0.95) * line * 0.17 + vec3(0.025) * b;
+    gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0); // para espaço linear
+  }
+`;
+
+const POST_FRAG = /* glsl */`
+  precision highp float;
+  uniform sampler2D tScene;
+  uniform vec2  uLow;
+  uniform vec2  uRes;
+  uniform float uTime;
+  uniform float uDim;
+  uniform float uLevels;
+  varying vec2 vUv;
+
+  float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+  float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+  float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+
+  void main(){
+    vec2 c = vUv - 0.5;
+    float r2 = dot(c, c);
+    vec2 uv = 0.5 + c * (1.0 + 0.035 * r2);           // curvatura CRT
+    vec2 px = floor(uv * uLow) + 0.5;
+    vec2 suv = px / uLow;
+    float ca = 0.75 / uLow.x;
+
+    vec3 col;
+    col.r = texture2D(tScene, suv + vec2(ca, 0.0)).r;
+    col.g = texture2D(tScene, suv).g;
+    col.b = texture2D(tScene, suv - vec2(ca, 0.0)).b;
+    col = pow(max(col, 0.0), vec3(1.0 / 2.2));
+
+    float d = bayer4(px) - 0.5;                        // dithering ordenado
+    col = floor(col * uLevels + d + 0.5) / uLevels;
+
+    col *= 1.0 - uDim;
+    col *= 0.9 + 0.1 * sin(vUv.y * uRes.y * 3.14159);  // scanlines
+    col *= 1.0 - r2 * 0.85;                            // vinheta
+    col += (hash(vUv * uRes + fract(uTime)) - 0.5) * 0.03;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) col = vec3(0.0);
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+// ── peças ───────────────────────────────────────────────────────
+const V = (r, y) => new THREE.Vector2(r, y);
+const PROFILES = {
+  p: [V(0,0),V(.38,0),V(.38,.07),V(.30,.13),V(.26,.17),V(.18,.23),V(.13,.48),V(.22,.53),V(.22,.57),V(.12,.60),V(.18,.67),V(.21,.76),V(.18,.86),V(.10,.92),V(0,.94)],
+  b: [V(0,0),V(.38,0),V(.38,.07),V(.30,.12),V(.26,.16),V(.18,.22),V(.12,.62),V(.22,.67),V(.22,.71),V(.12,.74),V(.17,.84),V(.19,.96),V(.15,1.07),V(.08,1.14),V(.05,1.16),V(.07,1.20),V(0,1.24)],
+  r: [V(0,0),V(.40,0),V(.40,.08),V(.32,.14),V(.28,.20),V(.22,.62),V(.32,.67),V(.32,.90),V(.24,.90),V(.24,.84),V(0,.84)],
+  q: [V(0,0),V(.40,0),V(.40,.08),V(.31,.14),V(.27,.19),V(.18,.26),V(.12,.78),V(.24,.83),V(.24,.87),V(.14,.90),V(.20,1.10),V(.27,1.22),V(.18,1.20),V(.10,1.24),V(0,1.25)],
+  k: [V(0,0),V(.40,0),V(.40,.08),V(.31,.14),V(.27,.19),V(.18,.26),V(.13,.84),V(.25,.89),V(.25,.93),V(.15,.96),V(.22,1.16),V(.25,1.26),V(0,1.26)],
+  base: [V(0,0),V(.38,0),V(.38,.08),V(.31,.14),V(.27,.20),V(.20,.24),V(0,.24)]
+};
+
+function knightHead() {
+  const pts = [[-.30,0],[.32,0],[.28,.22],[.22,.42],[.30,.60],[.38,.80],[.36,.96],[.25,1.10],[.12,1.18],[.07,1.30],[-.01,1.19],[-.15,1.12],[-.32,1.00],[-.46,.86],[-.49,.76],[-.41,.69],[-.25,.73],[-.11,.66],[-.20,.46],[-.30,.24]];
+  const shape = new THREE.Shape();
+  pts.forEach(([x, y], i) => (i ? shape.lineTo(x, y) : shape.moveTo(x, y)));
+  const g = new THREE.ExtrudeGeometry(shape, { depth: .2, bevelEnabled: true, bevelThickness: .05, bevelSize: .04, bevelSegments: 1 });
+  g.translate(0, 0, -.1);
+  g.scale(.62, .62, 1);
+  return g;
+}
+
+function buildPiece(type, mat, accentMat) {
+  const g = new THREE.Group();
+  const add = (geo, m = mat) => { const mesh = new THREE.Mesh(geo, m); mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); return mesh; };
+  if (type === 'n') {
+    add(new THREE.LatheGeometry(PROFILES.base, 20));
+    const head = add(knightHead()); head.position.y = .2;
+    const eye = add(new THREE.BoxGeometry(.06, .06, .3), accentMat); eye.position.set(-.06, .78, 0);
+  } else {
+    add(new THREE.LatheGeometry(PROFILES[type], 20));
+    if (type === 'k') {
+      add(new THREE.BoxGeometry(.07, .26, .07)).position.y = 1.38;
+      add(new THREE.BoxGeometry(.2, .07, .07)).position.y = 1.4;
+    }
+    if (type === 'q') add(new THREE.SphereGeometry(.07, 8, 6)).position.y = 1.3;
+    if (type === 'b') add(new THREE.SphereGeometry(.05, 6, 4)).position.y = 1.24;
+    if (type === 'r') for (let i = 0; i < 4; i++) {
+      const m = add(new THREE.BoxGeometry(.12, .1, .12));
+      const a = i * Math.PI / 2 + Math.PI / 4;
+      m.position.set(Math.cos(a) * .22, .95, Math.sin(a) * .22);
+    }
+  }
+  g.scale.setScalar(.82);
+  return g;
+}
+
+// Ruy Lopez após 3.Bb5 — exatamente o lance do README
+const POSITION = {
+  white: { a1:'r', b1:'n', c1:'b', d1:'q', e1:'k', h1:'r', b5:'b', f3:'n', a2:'p', b2:'p', c2:'p', d2:'p', e4:'p', f2:'p', g2:'p', h2:'p', f1: null },
+  black: { a8:'r', c8:'b', d8:'q', e8:'k', f8:'b', g8:'n', h8:'r', c6:'n', a7:'p', b7:'p', c7:'p', d7:'p', e5:'p', f7:'p', g7:'p', h7:'p' }
+};
+
+// estados de câmera/tabuleiro por seção
+const STATES = {
+  hero:     { cam: [0, 10, 17],    look: [0, 0, 0],   off: [4.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
+  about:    { cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
+  history:  { cam: [0, 17, 9.5],   look: [0, 0, 0.4], off: [5.2, 0, 0],  rotY: 0.0,   sink: 1,   dim: 0.1,  spin: 0 },
+  stack:    { cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0.08 },
+  projects: { cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.12 },
+  medals:   { cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },
+  log:      { cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0.05 },
+  contact:  { cam: [2, 8, 14],     look: [0, 0.5, 0], off: [4.6, 0, 0],  rotY: -0.2,  sink: 0,   dim: 0.1,  spin: 0, resign: 1 }
+};
+
+export function createScene(canvas) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // a gama é aplicada no pós
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pixel = innerWidth < 760 ? 3 : 4;
+  let W = innerWidth, H = innerHeight;
+  const mobile = () => W < 900;
+
+  const rt = new THREE.WebGLRenderTarget(1, 1, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, type: THREE.HalfFloatType });
+  const quadGeo = new THREE.PlaneGeometry(2, 2);
+  const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  // fundo de tinta
+  const inkUniforms = {
+    uTime: { value: 0 }, uRes: { value: new THREE.Vector2() }, uMouse: { value: new THREE.Vector2(9, 9) },
+    uStir: { value: 0 }, uDrops: { value: Array.from({ length: 8 }, () => new THREE.Vector3(0, 0, -100)) }
+  };
+  const inkScene = new THREE.Scene();
+  inkScene.add(new THREE.Mesh(quadGeo, new THREE.ShaderMaterial({ vertexShader: FULLSCREEN_VERT, fragmentShader: INK_FRAG, uniforms: inkUniforms, depthWrite: false })));
+
+  // pós-processamento
+  const postUniforms = {
+    tScene: { value: rt.texture }, uLow: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2() },
+    uTime: { value: 0 }, uDim: { value: 0 }, uLevels: { value: 14 }
+  };
+  const postScene = new THREE.Scene();
+  postScene.add(new THREE.Mesh(quadGeo, new THREE.ShaderMaterial({ vertexShader: FULLSCREEN_VERT, fragmentShader: POST_FRAG, uniforms: postUniforms })));
+
+  // cena 3D
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+
+  scene.add(new THREE.HemisphereLight(0xdadada, 0x0a0a0a, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 2.4);
+  key.position.set(-5, 10, 6);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7 });
+  scene.add(key);
+  const rim = new THREE.PointLight(0xe0443a, 18, 20, 1.6);
+  rim.position.set(5, 3, -5);
+  scene.add(rim);
+
+  const root = new THREE.Group();
+  const board = new THREE.Group();
+  root.add(board);
+  scene.add(root);
+
+  // moldura + coordenadas
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = labelCanvas.height = 512;
+  const lc = labelCanvas.getContext('2d');
+  lc.fillStyle = '#0d0d0d'; lc.fillRect(0, 0, 512, 512);
+  lc.fillStyle = '#5a5a5a'; lc.font = 'bold 22px monospace'; lc.textAlign = 'center'; lc.textBaseline = 'middle';
+  const cell = 512 / 9.4, pad = 0.7 * cell;
+  for (let i = 0; i < 8; i++) {
+    lc.fillText(FILES[i], pad + (i + .5) * cell, 512 - pad / 2);
+    lc.fillText(String(8 - i), pad / 2, pad + (i + .5) * cell);
+  }
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  labelTex.colorSpace = THREE.SRGBColorSpace;
+  labelTex.magFilter = THREE.NearestFilter;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(9.4, .4, 9.4), [
+    new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: .9 }), new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: .9 }),
+    new THREE.MeshStandardMaterial({ map: labelTex, roughness: .9 }), new THREE.MeshStandardMaterial({ color: 0x0d0d0d }),
+    new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: .9 }), new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: .9 })
+  ]);
+  frame.position.y = -.2;
+  frame.receiveShadow = true;
+  board.add(frame);
+
+  const squares = {};
+  const sqGeo = new THREE.BoxGeometry(1, .2, 1);
+  for (let f = 0; f < 8; f++) for (let r = 0; r < 8; r++) {
+    const light = (f + r) % 2 === 1;
+    const m = new THREE.Mesh(sqGeo, new THREE.MeshStandardMaterial({ color: light ? 0x2e2e2e : 0x141414, roughness: .75, metalness: .05 }));
+    m.position.set(f - 3.5, 0, 3.5 - r);
+    m.receiveShadow = true;
+    m.userData = { name: FILES[f] + (r + 1), heat: 0, visited: 0 };
+    squares[m.userData.name] = m;
+    board.add(m);
+  }
+
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xe6e6e6, roughness: .55, flatShading: true });
+  const blackMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: .4, flatShading: true });
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0xe0443a, emissive: 0xe0443a, emissiveIntensity: .6 });
+
+  const pieces = [];
+  let heroKnight, blackKing;
+  for (const side of ['white', 'black']) {
+    for (const [s, type] of Object.entries(POSITION[side])) {
+      if (!type) continue;
+      const p = buildPiece(type, side === 'white' ? whiteMat : blackMat, accentMat);
+      p.position.copy(sqPos(s));
+      p.rotation.y = side === 'white' ? Math.PI / 2 : -Math.PI / 2;
+      p.userData = { base: p.position.clone(), delay: Math.random() * .6, sink: 0 };
+      board.add(p);
+      if (side === 'white' && s === 'f3') heroKnight = p; else pieces.push(p);
+      if (side === 'black' && type === 'k') blackKing = p;
+    }
+  }
+
+  // rastro do cavalo (L como no banner do README)
+  const trailMat = new THREE.LineBasicMaterial({ color: 0xf2f2f2, transparent: true, opacity: .85 });
+  const trail = new THREE.Line(new THREE.BufferGeometry(), trailMat);
+  trail.position.y = .13;
+  board.add(trail);
+  const trailPts = [];
+
+  const hop = { from: sqPos('f3'), to: sqPos('f3'), t: 1, current: 'f3' };
+  function knightTo(square, withTrail = true) {
+    if (square === hop.current) return;
+    const a = sq(hop.current), b = sq(square);
+    hop.from = heroKnight.position.clone(); hop.from.y = .1;
+    hop.to = sqPos(square); hop.t = 0;
+    if (withTrail) {
+      if (!trailPts.length) trailPts.push(sqPos(hop.current));
+      const corner = Math.abs(b.f - a.f) === 2 ? new THREE.Vector3(b.f - 3.5, .1, 3.5 - a.r) : new THREE.Vector3(a.f - 3.5, .1, 3.5 - b.r);
+      trailPts.push(corner, sqPos(square));
+      trail.geometry.setFromPoints(trailPts.map((p) => new THREE.Vector3(p.x, 0, p.z)));
+    }
+    squares[hop.current].userData.visited = 1;
+    hop.current = square;
+  }
+  function clearTrail() { trailPts.length = 0; trail.geometry.setFromPoints([]); Object.values(squares).forEach((s) => (s.userData.visited = 0)); }
+
+  // estado interpolado
+  const cur = structuredClone(STATES.hero);
+  let target = STATES.hero;
+  const mouse = new THREE.Vector2(0, 0), mouseSmooth = new THREE.Vector2();
+  let stir = 0, lastScroll = scrollY, dropIdx = 0, resign = 0;
+
+  function resize() {
+    W = innerWidth; H = innerHeight;
+    renderer.setSize(W, H, false);
+    const lw = Math.ceil(W / pixel), lh = Math.ceil(H / pixel);
+    rt.setSize(lw, lh);
+    inkUniforms.uRes.value.set(lw, lh);
+    postUniforms.uLow.value.set(lw, lh);
+    postUniforms.uRes.value.set(W, H);
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  function ndcToInk(x, y) { const m = Math.min(W, H); return [x * W / m, y * H / m]; }
+  function drop(ndcX, ndcY) {
+    const [x, y] = ndcToInk(ndcX, ndcY);
+    inkUniforms.uDrops.value[dropIdx++ % 8].set(x, y, inkUniforms.uTime.value);
+  }
+  function dropAtWorld(v) { const p = v.clone(); board.localToWorld(p); p.project(camera); drop(p.x, p.y); }
+
+  addEventListener('pointermove', (e) => {
+    mouse.set((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1);
+  }, { passive: true });
+
+  const ray = new THREE.Raycaster();
+  addEventListener('pointerdown', (e) => {
+    if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal')) return;
+    const n = new THREE.Vector2((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1);
+    drop(n.x, n.y);
+    ray.setFromCamera(n, camera);
+    const hit = ray.intersectObjects(Object.values(squares), false)[0];
+    if (hit) hit.object.userData.heat = 1;
+  });
+
+  // tour do cavalo (easter egg / comando `play`)
+  let tourTimer = null;
+  function tour(on = true) {
+    clearInterval(tourTimer);
+    if (!on) return;
+    const moves = [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
+    tourTimer = setInterval(() => {
+      const { f, r } = sq(hop.current);
+      const opts = moves.map(([df, dr]) => [f + df, r + dr]).filter(([a, b]) => a >= 0 && a < 8 && b >= 0 && b < 8)
+        .map(([a, b]) => FILES[a] + (b + 1)).filter((s) => !squares[s].userData.visited);
+      const next = opts.length ? opts[Math.floor(Math.random() * opts.length)] : (clearTrail(), 'f3');
+      knightTo(next);
+    }, 650);
+  }
+
+  const clock = new THREE.Clock();
+  const tmpV = new THREE.Vector3();
+  const lerp = (a, b, k) => a + (b - a) * k;
+
+  function frame_() {
+    const dt = Math.min(clock.getDelta(), .05);
+    const t = clock.elapsedTime;
+    const k = 1 - Math.pow(.025, dt);
+
+    for (const key of ['rotY', 'sink', 'dim', 'spin']) cur[key] = lerp(cur[key], target[key], k);
+    for (const key of ['cam', 'look', 'off']) for (let i = 0; i < 3; i++) cur[key][i] = lerp(cur[key][i], target[key][i], k);
+    resign = lerp(resign, target.resign || 0, k * .6);
+
+    const sv = scrollY - lastScroll; lastScroll = scrollY;
+    stir = lerp(stir, Math.min(Math.abs(sv) / 40, 3), .08);
+    mouseSmooth.lerp(mouse, .08);
+
+    // tabuleiro como carta: inclina para o mouse e flutua
+    const offX = mobile() ? 0 : cur.off[0];
+    root.position.set(offX, cur.off[1] + Math.sin(t * .7) * .12, cur.off[2]);
+    board.rotation.y = cur.rotY + (reduced ? 0 : t * cur.spin) + mouseSmooth.x * .12;
+    board.rotation.x = -mouseSmooth.y * .08 + Math.sin(t * .5) * .015;
+    board.rotation.z = mouseSmooth.x * .04;
+
+    const camBack = mobile() ? 1.35 : 1;
+    camera.position.set(cur.cam[0] * camBack, cur.cam[1] * camBack, cur.cam[2] * camBack);
+    camera.lookAt(tmpV.set(cur.look[0] + (mobile() ? 0 : offX * .15), cur.look[1], cur.look[2]));
+
+    for (const p of pieces) {
+      const s = Math.max(0, Math.min(1, cur.sink * 1.6 - p.userData.delay));
+      p.position.y = p.userData.base.y - s * 1.4;
+      p.visible = s < .99;
+    }
+
+    // salto do cavalo
+    if (hop.t < 1) {
+      hop.t = Math.min(1, hop.t + dt / .7);
+      const e = hop.t < .5 ? 2 * hop.t * hop.t : 1 - Math.pow(-2 * hop.t + 2, 2) / 2;
+      heroKnight.position.lerpVectors(hop.from, hop.to, e);
+      heroKnight.position.y = .1 + Math.sin(Math.PI * hop.t) * 1.8;
+      heroKnight.rotation.y = Math.PI / 2 + Math.sin(Math.PI * hop.t) * .6;
+      if (hop.t === 1) { squares[hop.current].userData.heat = 1; dropAtWorld(hop.to); }
+    } else {
+      heroKnight.position.y = .1 + Math.abs(Math.sin(t * 2.2)) * .06;
+    }
+
+    // rei preto abandona: 1-0
+    blackKing.rotation.z = resign * 1.45;
+    blackKing.position.y = .1 + resign * .25;
+    blackKing.position.x = blackKing.userData.base.x + resign * .4;
+
+    for (const s of Object.values(squares)) {
+      const u = s.userData;
+      u.heat = Math.max(0, u.heat - dt * .6);
+      const isCur = s.userData.name === hop.current && cur.sink > .5;
+      s.material.emissive.setRGB(
+        .9 * u.heat + (isCur ? .45 : 0) + u.visited * .05,
+        .26 * u.heat + u.visited * .05,
+        .23 * u.heat + u.visited * .05
+      );
+    }
+    trailMat.opacity = .25 + cur.sink * .6;
+
+    inkUniforms.uTime.value = reduced ? t * .25 : t;
+    const [mx, my] = ndcToInk(mouseSmooth.x, mouseSmooth.y);
+    inkUniforms.uMouse.value.set(mx, my);
+    inkUniforms.uStir.value = stir;
+    postUniforms.uTime.value = t;
+    postUniforms.uDim.value = cur.dim + (mobile() ? .25 : 0);
+
+    renderer.setRenderTarget(rt);
+    renderer.autoClear = true;
+    renderer.render(inkScene, orthoCam);
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    renderer.autoClear = true;
+    renderer.render(postScene, orthoCam);
+  }
+
+  let running = true;
+  renderer.setAnimationLoop(frame_);
+  document.addEventListener('visibilitychange', () => {
+    running = !document.hidden;
+    renderer.setAnimationLoop(running ? frame_ : null);
+    if (running) clock.getDelta();
+  });
+
+  return {
+    setSection(name) {
+      target = STATES[name] || STATES.hero;
+      if (name === 'hero' || name === 'contact') { clearTrail(); knightTo(name === 'hero' ? 'f3' : 'g5', false); }
+    },
+    knightTo,
+    clearTrail,
+    drop,
+    tour,
+    setPixel(n) { pixel = Math.max(1, Math.min(12, n | 0)); resize(); return pixel; },
+    setLevels(n) { postUniforms.uLevels.value = n; },
+    get pixel() { return pixel; }
+  };
+}
