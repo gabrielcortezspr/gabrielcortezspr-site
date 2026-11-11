@@ -192,7 +192,7 @@ function cards() {
     </div>`).join('');
 
   const all = $$('.card', hand);
-  $$('.art canvas', hand).forEach((cv) => cardModels.push(mountModel(cv, cv.dataset.model, { pixel: 3, hoverEl: cv.closest('.card') })));
+  $$('.art canvas', hand).forEach((cv) => cardModels.push(mountModel(cv, cv.dataset.model, { pixel: 1.6, hoverEl: cv.closest('.card') })));
 
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
@@ -256,7 +256,7 @@ function openProject(id) {
   m.hidden = false;
   modalModel?.destroy();
   const big = $('.model-big', card);
-  modalModel = mountModel(big, p.model, { pixel: 3, spin: .3, hoverEl: big });
+  modalModel = mountModel(big, p.model, { pixel: 2, spin: .3, hoverEl: big });
   $('.close', card).focus();
   arp([55, 59, 62, 66, 71], 0.07, 0.3, 2.2);
   if (scene) scene.drop((Math.random() - .5) * .6, (Math.random() - .5) * .6);
@@ -277,7 +277,7 @@ function medalRow() {
         ${medals.map((m, i) => ({ m, i })).filter(({ m }) => m.year === y).map(({ m, i }) => `
           <button class="medal ${m.tier}" data-i="${i}" data-cat="${m.cat}" style="--d:${(k++) * 80}ms; --sw:${(i % 3) * .4}s" aria-label="${esc(m.title)}: ${esc(m.sub)}">
             <span class="ribbon"></span>
-            <span class="coin"><span class="side">${esc(m.glyph)}</span></span>
+            ${m.tier === 'trophy' ? `<span class="obj">${pixelSvg(TROPHY)}</span>` : m.tier === 'seal' ? `<span class="obj">${pixelSvg(SCROLL)}</span>` : `<span class="coin"><span class="side">${esc(m.glyph)}</span></span>`}
             <span class="lbl"><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></span>
           </button>`).join('')}
       </div>
@@ -285,11 +285,11 @@ function medalRow() {
 
   const counts = {};
   medals.forEach((m) => { counts[m.tier] = (counts[m.tier] || 0) + 1; });
-  const LBL = { trophy: 'troféu', gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', seal: 'eventos' };
+  const LBL = { trophy: 'troféu', gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', seal: 'certificados' };
   $('#tally').innerHTML = Object.keys(LBL).filter((k) => counts[k]).map((k) => `<span class="t t-${k}"><b>${counts[k]}</b> ${LBL[k]}</span>`).join('');
 
   const filt = $('#medal-filters');
-  const cats = [['all', 'TODAS'], ['intl', 'INTERNACIONAIS'], ['nac', 'NACIONAIS'], ['evt', 'COMPETIÇÕES']];
+  const cats = [['all', 'TODAS'], ['intl', 'INTERNACIONAIS'], ['nac', 'NACIONAIS'], ['evt', 'COMPETIÇÕES'], ['talk', 'APRESENTAÇÕES']];
   filt.innerHTML = cats.map(([k, v]) => `<button role="tab" data-f="${k}" aria-selected="${k === 'all'}">${v}</button>`).join('');
   filt.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
@@ -315,7 +315,47 @@ function medalRow() {
 
 // medalha 3D com física (carregada só quando alguém clica)
 let medalStage = null, medalStageP = null;
-const TIER_PT = { trophy: 'troféu · campeão', gold: 'medalha de ouro', silver: 'medalha de prata', bronze: 'medalha de bronze', honor: 'honra ao mérito', seal: 'evento · competição' };
+const TIER_PT = { trophy: 'troféu · campeão', gold: 'medalha de ouro', silver: 'medalha de prata', bronze: 'medalha de bronze', honor: 'honra ao mérito', seal: 'certificado' };
+const HINT = {
+  stand: 'arraste para girar o troféu no expositor · puxe para cima/baixo para inclinar',
+  scroll: 'arraste para girar e balançar o pergaminho pelos cordões',
+  medal: 'arraste para girar e balançar · ela fica pendurada pela fita'
+};
+// ícones em pixel art para a vitrine (troféu e pergaminho)
+const TROPHY = [
+  '############',
+  '##.######.##',
+  '#..##r###..#',
+  '#..#rrr##..#',
+  '##.##r###.##',
+  '...######...',
+  '....####....',
+  '.....##.....',
+  '.....##.....',
+  '....++++....',
+  '...######...',
+  '...######...'
+];
+const SCROLL = [
+  'oooooooooooo',
+  '.pppppppppp.',
+  '.pllllllllp.',
+  '.pppppppppp.',
+  '.plllllpppp.',
+  '.pppppppppp.',
+  '.pllllllllp.',
+  '.pppppppppp.',
+  '.pppppprrpp.',
+  '.ppppprrrrp.',
+  '.pppppprrpp.',
+  'oooooooooooo'
+];
+function pixelSvg(grid) {
+  const C = { '#': 'var(--m)', '+': '#6c6c6c', r: '#e0443a', o: '#2a2a2a', p: '#e8e4da', l: '#9a9a9a' };
+  let r = '';
+  grid.forEach((row, y) => [...row].forEach((ch, x) => { if (C[ch]) r += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${C[ch]}"/>`; }));
+  return `<svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+}
 async function openMedal(m) {
   const st = $('#medal-stage');
   $('#ms-tier').textContent = TIER_PT[m.tier] || '';
@@ -335,7 +375,9 @@ async function openMedal(m) {
   }
   await medalStageP;
   medalStage.pause(false);
-  medalStage.setMedal(m);
+  const kind = medalStage.setMedal(m);
+  $('.ms-hint').textContent = HINT[kind] || HINT.medal;
+  $('#ms-drop').textContent = kind === 'stand' ? '↻ girar troféu' : '↻ girar';
   $('#ms-close').focus();
 }
 function closeMedal() {
@@ -456,7 +498,9 @@ function sections() {
   secs.forEach((s) => io.observe(s));
 
   const bar = $('#clock-bar');
+  const top = $('.top');
   const onScroll = () => {
+    top.classList.toggle('scrolled', scrollY > 40);
     const max = document.documentElement.scrollHeight - innerHeight;
     bar.style.width = (scrollY / Math.max(1, max)) * 100 + '%';
   };

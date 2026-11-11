@@ -248,11 +248,11 @@ export const projects = [
   }
 ];
 
-// tier: gold | silver | bronze | honor | trophy | seal   ·  cat: intl | nac | evt
+// tier: gold | silver | bronze | honor | trophy (troféu) | seal (certificado)   ·  cat: intl | nac | evt (competição) | talk (apresentação)
 export const medals = [
   { tier: 'trophy', cat: 'evt', glyph: '♛', title: 'Desafio Pro-Link', desc: 'Liderei a equipe vencedora do desafio do CREA-AM no II CENATEC.', sub: 'Campeão · CREA-AM', year: 2026 },
   { tier: 'seal', cat: 'evt', glyph: '♞', title: 'Liga Jovem', desc: 'BusFlow chegou à final estadual: contagem de passageiros com ESP32 e MQTT.', sub: 'Finalista estadual · BusFlow', year: 2025 },
-  { tier: 'seal', cat: 'evt', glyph: '◈', title: 'Chip in the Jungle', desc: 'Apresentei a estufa automatizada em FPGA no evento científico internacional.', sub: 'Apresentação · estufa FPGA', year: 2025 },
+  { tier: 'seal', cat: 'talk', glyph: '◈', title: 'Chip in the Jungle', desc: 'Apresentei a estufa automatizada em FPGA no evento científico internacional.', sub: 'Apresentação · estufa FPGA', year: 2025 },
   { tier: 'bronze', cat: 'intl', glyph: '∑', title: 'American Math Olympiad', desc: 'Bronze internacional em matemática.', sub: 'AMO · bronze', year: 2021 },
   { tier: 'bronze', cat: 'intl', glyph: 'π', title: 'Singapore Math Olympiad', desc: 'Bronze internacional em matemática.', sub: 'SMO · bronze', year: 2021 },
   { tier: 'bronze', cat: 'intl', glyph: '∞', title: 'Matemática sem Fronteiras', desc: 'Bronze na competição internacional de matemática em equipe.', sub: 'bronze', year: 2021 },

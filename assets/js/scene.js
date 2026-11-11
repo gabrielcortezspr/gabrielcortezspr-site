@@ -137,9 +137,9 @@ export const GAME = [
 
 // estados de câmera/tabuleiro por seção
 const STATES = {
-  hero:     { ascii: 0, cam: [0, 10, 17],    look: [0, 0, 0],   off: [4.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
+  hero:     { ascii: 0, cam: [0, 10.5, 18.5],  look: [0, 0, 0],   off: [5.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
   about:    { ascii: 0, cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
-  history:  { ascii: 0, cam: [0, 13, 10.5],  look: [0, 0, 0.3], off: [5, 0, 0],    rotY: 0.0,   sink: 0,   dim: 0.05, spin: 0, game: 1 },
+  history:  { ascii: 0, cam: [0, 15.5, 13.5], look: [0, 0, 0.3], off: [4.2, 0, 0], rotY: 0.0,   sink: 0,   dim: 0.08, spin: 0, game: 1 },
   stack:    { ascii: 0, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0 },
   projects: { ascii: 0, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.03 },
   medals:   { ascii: 0, cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },
@@ -170,7 +170,7 @@ export function createScene(canvas) {
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // a gama é aplicada no pós
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let pixel = 4;
+  let pixel = innerWidth < 760 ? 2.5 : 3;
   let W = innerWidth, H = innerHeight;
   const mobile = () => W < 900;
 
@@ -456,7 +456,7 @@ export function createScene(canvas) {
   function frame_() {
     const dt = Math.min(clock.getDelta(), .05);
     const t = clock.elapsedTime;
-    const k = 1 - Math.pow(.12, dt);
+    const k = 1 - Math.pow(.05, dt);
 
     cur.ascii = lerp(cur.ascii ?? 0, asciiForce ?? target.ascii ?? 0, k * 1.4);
     for (const key of ['rotY', 'sink', 'dim', 'spin']) cur[key] = lerp(cur[key], target[key], k);

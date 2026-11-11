@@ -494,7 +494,7 @@ const MODELS = {
 };
 
 // ── renderer compartilhado ──────────────────────────────────────
-const MAXW = 360, MAXH = 220;
+const MAXW = 760, MAXH = 420;
 let shared = null;
 
 function getShared() {
@@ -544,7 +544,7 @@ function getShared() {
 }
 
 // monta um modelo num <canvas>. pixel = tamanho do pixel em CSS px
-export function mountModel(canvas, kind, { pixel = 3, spin = .25, hoverEl = canvas } = {}) {
+export function mountModel(canvas, kind, { pixel = 1.6, spin = .25, hoverEl = canvas } = {}) {
   const build = MODELS[kind]; if (!build) return null;
   const { items } = getShared();
   const scene = new THREE.Scene();
