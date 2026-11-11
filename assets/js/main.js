@@ -183,7 +183,7 @@ const cardModels = [];
 function cards() {
   const hand = $('#hand');
   hand.innerHTML = projects.map((p, i) => `
-    <div class="card ${p.rarity}" tabindex="0" role="button" data-id="${p.id}" data-rarity="${p.rarity}"
+    <div class="card ${p.rarity}" tabindex="0" role="button" data-id="${p.id}" data-cat="${p.cat}" data-rarity="${p.rarity}"
          aria-label="${esc(p.name)} — ${RARITY[p.rarity]}" style="--deal:${i * 80}ms; --sway:${-i * .7}s">
       <div class="inner">
         <div class="face">
@@ -232,14 +232,14 @@ function cards() {
   });
 
   const f = $('#filters');
-  const opts = [['all', 'TODAS'], ...Object.entries(RARITY)];
+  const opts = [['all', 'TODOS'], ['ia', 'IA'], ['hw', 'HARDWARE'], ['web', 'WEB'], ['data', 'DADOS'], ['gfx', 'GRÁFICOS']];
   f.innerHTML = opts.map(([k, v]) => `<button role="tab" data-f="${k}" aria-selected="${k === 'all'}">${v}</button>`).join('');
   f.addEventListener('click', (e) => {
     const btn = e.target.closest('button'); if (!btn) return;
     $$('button', f).forEach((b) => b.setAttribute('aria-selected', b === btn));
     let k = 0;
     all.forEach((c) => {
-      const show = btn.dataset.f === 'all' || c.dataset.rarity === btn.dataset.f;
+      const show = btn.dataset.f === 'all' || c.dataset.cat === btn.dataset.f;
       c.classList.toggle('hide', !show);
       if (show) { c.classList.remove('dealt'); void c.offsetWidth; c.style.setProperty('--deal', `${k++ * 80}ms`); c.classList.add('dealt'); }
     });
@@ -416,7 +416,14 @@ function contact() {
   $('#links').innerHTML = `
     <a href="${L.linkedin}" target="_blank" rel="noopener">linkedin</a>
     <a href="mailto:${L.email}">email</a>
+    <button class="copy" data-copy="${L.email}">copiar e-mail</button>
     <a href="${L.github}" target="_blank" rel="noopener">github</a>`;
+  $('#links').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]'); if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'copiado ✓'; } catch { b.textContent = b.dataset.copy; }
+    note(SCALE[9], 0.25, 1.4);
+    setTimeout(() => (b.textContent = 'copiar e-mail'), 2200);
+  });
   $('#quote').innerHTML = `“${esc(profile.quote.text)}”<cite>— ${esc(profile.quote.author)}</cite>`;
   $('#year').textContent = new Date().getFullYear();
 
@@ -424,13 +431,10 @@ function contact() {
   const io = new IntersectionObserver(async ([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    out.innerHTML = `PING <b>gabriel</b> (${esc(profile.location)}): 56 data bytes\n`;
-    for (let s = 0; s < 4; s++) {
-      await sleep(reduced ? 0 : 500);
-      note(SCALE[5 + s * 2], 0.25, 1.5);
-      out.innerHTML += `64 bytes from gabriel: icmp_seq=${s} ttl=64 time=${(Math.random() * 12 + 3).toFixed(1)} ms\n`;
-    }
-    out.innerHTML += `--- 4 packets transmitted, 4 received, <b>0% packet loss</b> · disponível para conversar`;
+    out.innerHTML = `PING <b>gabriel</b> (${esc(profile.location)})\n`;
+    await sleep(reduced ? 0 : 600);
+    note(SCALE[7], 0.25, 1.5);
+    out.innerHTML += `64 bytes from gabriel: time=${(Math.random() * 8 + 3).toFixed(1)} ms · <b>respondo rápido</b>`;
   }, { threshold: .5 });
   io.observe(out);
 
@@ -556,4 +560,7 @@ function modal() {
 about(); timeline(); aboutDrawer(); expGrid(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); setupCommands();
 const pianoApi = pianoSection();
 terminal(pianoApi);
-boot().then(() => { sections(); hero(); });
+boot().then(() => {
+  sections(); hero();
+  setTimeout(() => $$('.xp, .kit, .medal, .card').forEach((el) => el.classList.add(el.classList.contains('card') ? 'dealt' : 'in')), 9000);
+});
