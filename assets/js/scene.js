@@ -67,6 +67,9 @@ const POST_FRAG = /* glsl */`
   uniform float uTime;
   uniform float uDim;
   uniform float uLevels;
+  uniform sampler2D tGlyph;
+  uniform float uAscii;
+  uniform vec2  uCell;
   varying vec2 vUv;
 
   float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
@@ -89,6 +92,19 @@ const POST_FRAG = /* glsl */`
 
     float d = bayer4(px) - 0.5;                        // dithering ordenado
     col = floor(col * uLevels + d + 0.5) / uLevels;
+
+    // modo ASCII: cada célula vira um caractere pela luminância
+    if (uAscii > 0.001) {
+      vec2 fc = vUv * uRes;
+      vec2 cid = floor(fc / uCell);
+      vec3 sc = pow(max(texture2D(tScene, (cid + 0.5) * uCell / uRes).rgb, 0.0), vec3(1.0 / 2.2));
+      float lum = dot(sc, vec3(0.299, 0.587, 0.114));
+      float gi = floor(clamp(lum * 1.7, 0.0, 0.999) * 10.0);
+      vec2 lc = fract(fc / uCell);
+      float g = texture2D(tGlyph, vec2((gi + lc.x) / 10.0, lc.y)).r;
+      vec3 tint = mix(vec3(0.9), sc / max(lum, 0.08) * 0.75, 0.45);
+      col = mix(col, g * tint * (0.55 + lum), uAscii);
+    }
 
     col *= 1.0 - uDim;
     col *= 0.9 + 0.1 * sin(vUv.y * uRes.y * 3.14159);  // scanlines
@@ -153,15 +169,29 @@ const POSITION = {
 
 // estados de câmera/tabuleiro por seção
 const STATES = {
-  hero:     { cam: [0, 10, 17],    look: [0, 0, 0],   off: [4.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
-  about:    { cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
-  history:  { cam: [0, 17, 9.5],   look: [0, 0, 0.4], off: [5.2, 0, 0],  rotY: 0.0,   sink: 1,   dim: 0.1,  spin: 0 },
-  stack:    { cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0.08 },
-  projects: { cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.12 },
-  medals:   { cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },
-  log:      { cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0.05 },
-  contact:  { cam: [2, 8, 14],     look: [0, 0.5, 0], off: [4.6, 0, 0],  rotY: -0.2,  sink: 0,   dim: 0.1,  spin: 0, resign: 1 }
+  hero:     { ascii: 0, cam: [0, 10, 17],    look: [0, 0, 0],   off: [4.6, 0, 0],  rotY: -0.55, sink: 0,   dim: 0.0,  spin: 0 },
+  about:    { ascii: 0, cam: [9, 8, 12],     look: [0, 0, 0],   off: [4.8, 0, 0],  rotY: 0.35,  sink: 0,   dim: 0.15, spin: 0 },
+  history:  { ascii: 0, cam: [0, 17, 9.5],   look: [0, 0, 0.4], off: [5.2, 0, 0],  rotY: 0.0,   sink: 1,   dim: 0.1,  spin: 0 },
+  stack:    { ascii: 1, cam: [0, 10, 16],    look: [0, 0, 0],   off: [0, -1, 0],   rotY: 0.6,   sink: 1,   dim: 0.55, spin: 0.08 },
+  projects: { ascii: 1, cam: [0, 6, 20],     look: [0, 1, 0],   off: [0, -1, 0],   rotY: 1.2,   sink: 0.4, dim: 0.62, spin: 0.12 },
+  medals:   { ascii: 0, cam: [-8, 9, 14],    look: [0, 0, 0],   off: [-4.6, 0, 0], rotY: -0.3,  sink: 0.6, dim: 0.3,  spin: 0 },
+  log:      { ascii: 1, cam: [0, 18, 3],     look: [0, 0, 0],   off: [0, 0, 0],    rotY: 0.8,   sink: 0.2, dim: 0.6,  spin: 0.05 },
+  piano:    { ascii: 1, cam: [0, 7, 9], look: [0, 0, 0], off: [0, -0.5, 0], rotY: 0.2, sink: 1, dim: 0.4, spin: 0.04 },
+  contact:  { ascii: 0, cam: [2, 8, 14],     look: [0, 0.5, 0], off: [4.6, 0, 0],  rotY: -0.2,  sink: 0,   dim: 0.1,  spin: 0, resign: 1 }
 };
+
+function glyphAtlas() {
+  const chars = ' .:-=+*#%@', gw = 24, gh = 40;
+  const c = document.createElement('canvas');
+  c.width = gw * chars.length; c.height = gh;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#fff'; g.font = 'bold 34px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  [...chars].forEach((ch, i) => g.fillText(ch, i * gw + gw / 2, gh / 2 + 2));
+  const t = new THREE.CanvasTexture(c);
+  t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = false;
+  return t;
+}
 
 export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -190,7 +220,8 @@ export function createScene(canvas) {
   // pós-processamento
   const postUniforms = {
     tScene: { value: rt.texture }, uLow: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2() },
-    uTime: { value: 0 }, uDim: { value: 0 }, uLevels: { value: 14 }
+    uTime: { value: 0 }, uDim: { value: 0 }, uLevels: { value: 14 },
+    tGlyph: { value: glyphAtlas() }, uAscii: { value: 0 }, uCell: { value: new THREE.Vector2(8, 13) }
   };
   const postScene = new THREE.Scene();
   postScene.add(new THREE.Mesh(quadGeo, new THREE.ShaderMaterial({ vertexShader: FULLSCREEN_VERT, fragmentShader: POST_FRAG, uniforms: postUniforms })));
@@ -297,6 +328,8 @@ export function createScene(canvas) {
   const cur = structuredClone(STATES.hero);
   let target = STATES.hero;
   const mouse = new THREE.Vector2(0, 0), mouseSmooth = new THREE.Vector2();
+  let asciiForce = null;
+  const api = {};
   let stir = 0, lastScroll = scrollY, dropIdx = 0, resign = 0;
 
   function resize() {
@@ -358,6 +391,7 @@ export function createScene(canvas) {
     const t = clock.elapsedTime;
     const k = 1 - Math.pow(.025, dt);
 
+    cur.ascii = lerp(cur.ascii ?? 0, asciiForce ?? target.ascii ?? 0, k * 1.4);
     for (const key of ['rotY', 'sink', 'dim', 'spin']) cur[key] = lerp(cur[key], target[key], k);
     for (const key of ['cam', 'look', 'off']) for (let i = 0; i < 3; i++) cur[key][i] = lerp(cur[key][i], target[key][i], k);
     resign = lerp(resign, target.resign || 0, k * .6);
@@ -390,7 +424,7 @@ export function createScene(canvas) {
       heroKnight.position.lerpVectors(hop.from, hop.to, e);
       heroKnight.position.y = .1 + Math.sin(Math.PI * hop.t) * 1.8;
       heroKnight.rotation.y = Math.PI / 2 + Math.sin(Math.PI * hop.t) * .6;
-      if (hop.t === 1) { squares[hop.current].userData.heat = 1; dropAtWorld(hop.to); }
+      if (hop.t === 1) { squares[hop.current].userData.heat = 1; dropAtWorld(hop.to); api.onHop?.(hop.current); }
     } else {
       heroKnight.position.y = .1 + Math.abs(Math.sin(t * 2.2)) * .06;
     }
@@ -418,6 +452,7 @@ export function createScene(canvas) {
     inkUniforms.uStir.value = stir;
     postUniforms.uTime.value = t;
     postUniforms.uDim.value = cur.dim + (mobile() ? .25 : 0);
+    postUniforms.uAscii.value = cur.ascii < 0.02 ? 0 : cur.ascii;
 
     renderer.setRenderTarget(rt);
     renderer.autoClear = true;
@@ -438,7 +473,9 @@ export function createScene(canvas) {
     if (running) clock.getDelta();
   });
 
-  return {
+  return Object.assign(api, {
+    setAscii(v) { asciiForce = v; return v; },
+    get ascii() { return asciiForce; },
     setSection(name) {
       target = STATES[name] || STATES.hero;
       if (name === 'hero' || name === 'contact') { clearTrail(); knightTo(name === 'hero' ? 'f3' : 'g5', false); }
@@ -450,5 +487,5 @@ export function createScene(canvas) {
     setPixel(n) { pixel = Math.max(1, Math.min(12, n | 0)); resize(); return pixel; },
     setLevels(n) { postUniforms.uLevels.value = n; },
     get pixel() { return pixel; }
-  };
+  });
 }
