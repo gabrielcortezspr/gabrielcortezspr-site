@@ -4,17 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gabriel Cortez</title>
-  <meta name="description" content="Gabriel Cortez — software engineer · ai · automation · data. Samsung Electronics (VD), co-fundador da Kacto Services." />
+  <meta name="description" content="Gabriel Cortez — engenharia de software, IA aplicada, dados e sistemas embarcados. Samsung, Kacto, NarraTer, campeão do Desafio Pro-Link." />
   <meta name="theme-color" content="#0a0a0a" />
   <meta property="og:title" content="Gabriel Cortez — software engineer" />
-  <meta property="og:description" content="ai · automation · data — xadrez digital × suminagashi" />
+  <meta property="og:description" content="Software Engineer na Samsung Electronics · automação, dados e IA. Portfólio interativo em 3D." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/og.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Silkscreen:wght@400;700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/style.css" />
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
   </script>
 </head>
 <body>
@@ -23,24 +26,28 @@
 
   <!-- boot -->
   <div id="boot" aria-hidden="true">
-    <pre id="boot-log"></pre>
-    <div class="boot-bar"><i></i></div>
+    <div class="boot-row" id="boot-row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b class="boot-n">♞</b></div>
+    <p class="boot-name">GABRIEL CORTEZ<span class="blink">_</span></p>
   </div>
 
-  <!-- relógio de xadrez = progresso de rolagem -->
   <div class="clock" aria-hidden="true"><i id="clock-bar"></i></div>
 
   <header class="top">
-    <a href="#hero" class="brand" data-glitch="GC">GC<span class="blink">_</span></a>
+    <a href="#hero" class="brand">GC<span class="blink">_</span></a>
     <nav class="moves" aria-label="Seções">
-      <a href="#about"><b>1.</b> whoami</a>
-      <a href="#history"><b>2.</b> história</a>
-      <a href="#stack"><b>3.</b> stack</a>
-      <a href="#projects"><b>4.</b> projetos</a>
-      <a href="#medals"><b>5.</b> medalhas</a>
+      <a href="#exp"><b>1.</b> <span data-i18n="nav.exp">experiências</span></a>
+      <a href="#projects"><b>2.</b> <span data-i18n="nav.projects">projetos</span></a>
+      <a href="#medals"><b>3.</b> <span data-i18n="nav.medals">conquistas</span></a>
+      <a href="#stack"><b>4.</b> stack</a>
+      <a href="#piano"><b>5.</b> piano</a>
       <a href="#contact"><b>6.</b> ping</a>
     </nav>
-    <button class="term-btn" id="open-term" title="Terminal (tecla ~)"><span>&gt;_</span></button>
+    <div class="tools">
+      <button class="term-btn about-btn" data-open-about><span data-i18n="top.about">sobre</span></button>
+      <button class="term-btn lang-btn" id="lang-btn">EN</button>
+      <button class="term-btn" id="sound-btn" aria-pressed="false" title="Som (piano)"><span>♪</span><em>off</em></button>
+      <button class="term-btn" id="open-term" title="Terminal (tecla ~)"><span>&gt;_</span></button>
+    </div>
   </header>
 
   <main>
@@ -52,38 +59,20 @@
           <span class="type" id="type-name"></span><span class="cursor"></span>
         </h1>
         <p class="role" id="role"></p>
+        <p class="now-line" data-i18n="hero.now">Software Engineer na <b>Samsung Electronics</b> · Manaus, AM</p>
         <p class="pgn" id="pgn"></p>
         <div class="hero-cta">
-          <a class="btn pix" href="#projects">ver jogadas <span>→</span></a>
-          <a class="btn ghost" href="#contact">ping gabriel</a>
+          <a class="btn pix" href="#exp"><span data-i18n="hero.cta">ver trabalho</span> <span>→</span></a>
+          <button class="btn ghost" data-open-about><span data-i18n="hero.about">sobre mim</span></button>
         </div>
-        <p class="hint">clique no fundo para pingar tinta · <kbd>~</kbd> abre o terminal</p>
       </div>
-      <div class="scroll-cue" aria-hidden="true"><span>scroll</span><i></i></div>
       <div class="kanji" aria-hidden="true">墨流し</div>
     </section>
 
-    <!-- WHOAMI -->
-    <section id="about" data-scene="about" class="panel left">
-      <h2 class="cmd" data-cmd="cat about.md"></h2>
-      <div class="glass">
-        <div id="whoami-text" class="lead"></div>
-        <pre class="checklist" id="expertise"></pre>
-      </div>
-    </section>
-
-    <!-- HISTÓRIA -->
-    <section id="history" data-scene="history" class="panel left history">
-      <h2 class="cmd" data-cmd="cat history.pgn"></h2>
-      <p class="sub">cada marco é um lance — observe o cavalo saltar pelo tabuleiro.</p>
-      <ol class="timeline" id="timeline"></ol>
-    </section>
-
-    <!-- STACK -->
-    <section id="stack" data-scene="stack" class="panel center">
-      <h2 class="cmd" data-cmd="cat stack.board"></h2>
-      <div class="board-ui" id="stack-board"></div>
-      <p class="mono-note" id="stack-note">20/20 modules loaded · no bad moves detected</p>
+    <!-- EXPERIÊNCIAS -->
+    <section id="exp" data-scene="exp" class="panel exp">
+      <h2 class="cmd" data-cmd="ls ./experiencias"></h2>
+      <div class="exp-grid" id="exp-grid"></div>
     </section>
 
     <!-- PROJETOS -->
@@ -94,15 +83,32 @@
     </section>
 
     <!-- MEDALHAS -->
-    <section id="medals" data-scene="medals" class="panel right">
-      <h2 class="cmd" data-cmd="cat medals.json"></h2>
+    <section id="medals" data-scene="medals" class="panel center medals-sec">
+      <h2 class="cmd" data-cmd="cat conquistas.json"></h2>
+      <div class="tally" id="tally"></div>
+      <div class="filters left" id="medal-filters" role="tablist"></div>
       <div class="medals" id="medal-row"></div>
     </section>
 
-    <!-- LOG -->
-    <section id="log" data-scene="log" class="panel center">
-      <h2 class="cmd" data-cmd="tail -f current.log"></h2>
-      <pre class="log glass" id="log-out"></pre>
+    <!-- STACK -->
+    <section id="stack" data-scene="stack" class="panel center">
+      <h2 class="cmd" data-cmd="cat stack.md"></h2>
+      <div class="kits" id="stack-board"></div>
+      <p class="mono-note" id="stack-note"></p>
+    </section>
+
+    <!-- PIANO -->
+    <section id="piano" data-scene="piano" class="panel left piano">
+      <h2 class="cmd" data-cmd="./piano --satie"></h2>
+      <div class="glass piano-card">
+        <p class="lead-s" data-i18n="piano.lead">Entre um lance e outro, Satie no piano ao fundo.</p>
+        <pre class="tracker" id="tracker" aria-live="off"></pre>
+        <div class="piano-ctl">
+          <button class="btn pix" id="play-satie" data-i18n="piano.play">▶ gymnopédie nº1</button>
+          <button class="btn ghost" id="stop-satie" data-i18n="piano.stop">■ parar</button>
+        </div>
+        <p class="tiny-k dim">Gymnopédie nº1 · Erik Satie, 1888</p>
+      </div>
     </section>
 
     <!-- CONTATO -->
@@ -115,20 +121,49 @@
       <footer class="end">
         <p class="result">1-0 <span class="dim">·</span> good game<span class="blink">▌</span></p>
         <blockquote id="quote"></blockquote>
-        <p class="tiny">© <span id="year"></span> Gabriel Cortez · feito com three.js, glsl e tinta digital</p>
+        <p class="tiny">© <span id="year"></span> Gabriel Cortez · <span data-i18n="footer">three.js, glsl, web audio e tinta digital</span></p>
       </footer>
     </section>
   </main>
 
-  <!-- trilho lateral de casas (navegação) -->
   <aside class="rail" aria-hidden="true" id="rail"></aside>
 
-  <!-- modal de projeto -->
+  <!-- sobre mim: leitura opcional -->
+  <div class="drawer" id="about" role="dialog" aria-modal="true" aria-label="Sobre mim" hidden>
+    <div class="drawer-panel">
+      <button class="close" id="close-about" aria-label="Fechar">×</button>
+      <h2 class="cmd done-cmd">cat about.md</h2>
+      <div class="glass fetch"><pre class="fetch-info" id="fetch-info"></pre></div>
+      <div id="whoami-text" class="lead"></div>
+      <pre class="checklist" id="expertise"></pre>
+      <a class="cv-card" data-cv href="assets/cv/gabriel-cortez-cv-pt.pdf" target="_blank" rel="noopener">
+        <b data-i18n="cv.btn">currículo completo (PDF)</b> <span>↓</span>
+        <small data-i18n="cv.note">versão estendida, com tudo que tem no site e mais detalhes</small>
+      </a>
+      <h2 class="cmd done-cmd">cat history.md</h2>
+      <ol class="mini-tl" id="timeline"></ol>
+      <h2 class="cmd done-cmd">tail -f current.log</h2>
+      <pre class="log glass" id="log-out"></pre>
+    </div>
+  </div>
+
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal-card" id="modal-card"></div>
   </div>
 
-  <!-- terminal -->
+  <div class="medal-stage" id="medal-stage" role="dialog" aria-modal="true" aria-labelledby="ms-title" hidden>
+    <canvas id="medal-canvas" aria-label="Medalha em 3D"></canvas>
+    <div class="ms-info">
+      <p class="ms-tier" id="ms-tier"></p>
+      <h3 id="ms-title"></h3>
+      <p class="ms-sub" id="ms-sub"></p>
+      <p class="ms-desc" id="ms-desc"></p>
+    </div>
+    <div class="ms-ctl">
+      <button class="btn pix" id="ms-close" data-i18n="close">fechar ×</button>
+    </div>
+  </div>
+
   <div class="term" id="term" hidden>
     <div class="term-head"><span>gabriel@cortez: ~</span><button id="close-term" aria-label="Fechar terminal">×</button></div>
     <pre class="term-out" id="term-out"></pre>
