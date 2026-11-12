@@ -2,7 +2,7 @@ import { profile, history, stack, projects, medals, currentLog, experiences } fr
 import { LANG, t, setLang, applyStatic, cvUrl } from './i18n.js';
 import { mountModel } from './models.js';
 import { pixelSvg } from './icons.js';
-import { piano, note, arp, playSong, stopSong, noteName, SCALE } from './piano.js';
+import { piano, note, uiNote, arp, playSong, stopSong, noteName, SCALE } from './piano.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -38,7 +38,7 @@ async function boot() {
 // ── som ───────────────────────────────────────────────────────
 // cada lance jogado no tabuleiro toca uma nota
 function onMove(ply) {
-  note(SCALE[(ply + 3) % SCALE.length], 0.4, 2.4);
+  uiNote(SCALE[(ply + 3) % SCALE.length], 0.4, 2.4);
 }
 
 function soundUI() {
@@ -57,7 +57,7 @@ function soundUI() {
   // gota de tinta no fundo = nota grave
   addEventListener('pointerdown', (e) => {
     if (e.target.closest('a,button,input,.card,.medal,.tile,.term,.modal,.medal-stage') || inPiano) return;
-    note([43, 50, 55, 59, 62][Math.floor(Math.random() * 5)], 0.3, 3);
+    uiNote([43, 50, 55, 59, 62][Math.floor(Math.random() * 5)], 0.3, 3);
   });
 }
 
@@ -143,7 +143,7 @@ function expGrid() {
     const x = experiences[+el.dataset.i];
     mountModel($('canvas', el), x.model, { pixel: 1.6, hoverEl: el });
     // passar o mouse avança a partida no tabuleiro ao fundo
-    el.addEventListener('pointerenter', () => { scene?.setPly((experiences.length - +el.dataset.i) * 2); note(SCALE[(+el.dataset.i * 2 + 5) % SCALE.length], 0.2, 1.6); });
+    el.addEventListener('pointerenter', () => { scene?.setPly((experiences.length - +el.dataset.i) * 2); uiNote(SCALE[(+el.dataset.i * 2 + 5) % SCALE.length], 0.2, 1.6); });
     el.addEventListener('click', () => openDetail({
       title: x.org, kicker: x.now ? t('now') : x.period, sub: `${x.role} · ${x.period}`, text: x.text, facts: x.facts, tags: x.tags, model: x.model, color: x.now ? '#e0443a' : '#f2f2f2'
     }));
@@ -162,7 +162,7 @@ function stackBoard() {
       <p class="kit-where"><span class="dim">${t('usedIn')}</span> ${esc(g.where)}</p>
     </article>`).join('');
   const kits = $$('.kit', b);
-  kits.forEach((k, i) => k.addEventListener('pointerenter', () => note(SCALE[(i * 2 + 4) % SCALE.length], 0.22, 1.6)));
+  kits.forEach((k, i) => k.addEventListener('pointerenter', () => uiNote(SCALE[(i * 2 + 4) % SCALE.length], 0.22, 1.6)));
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
@@ -204,7 +204,7 @@ function cards() {
     io.disconnect();
     all.forEach((c) => c.classList.add('dealt'));
     // som de cartas sendo distribuídas
-    all.forEach((c, i) => setTimeout(() => note(SCALE[8 + (i % 6)], 0.12, 0.8), i * 80));
+
   }, { threshold: .15 });
   io.observe(hand);
 
@@ -219,7 +219,7 @@ function cards() {
       c.style.setProperty('--my', `${y * 100}%`);
       inner.style.transition = 'transform .08s';
     });
-    c.addEventListener('pointerenter', () => note(SCALE[6 + (i % 7)], 0.22, 1.6));
+    c.addEventListener('pointerenter', () => uiNote(SCALE[6 + (i % 7)], 0.22, 1.6));
     c.addEventListener('pointerleave', () => {
       c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg');
       inner.style.transition = '';
@@ -314,12 +314,12 @@ function medalRow() {
     io.disconnect();
     $$('.medal', row).forEach((el, i) => {
       el.classList.add('in');
-      setTimeout(() => note(SCALE[4 + (i % 10)], 0.16, 1.2), i * 80 + 300);
+
     });
   }, { threshold: .15 });
   io.observe(row);
   $$('.medal', row).forEach((el) => {
-    el.addEventListener('pointerenter', () => note(SCALE[9 + (+el.dataset.i % 4)], 0.14, 1.4));
+    el.addEventListener('pointerenter', () => uiNote(SCALE[9 + (+el.dataset.i % 4)], 0.14, 1.4));
     el.addEventListener('click', () => openMedal(medals[+el.dataset.i]));
   });
 }
@@ -338,7 +338,7 @@ async function openMedal(m) {
   if (!medalStageP) {
     medalStageP = import('./medal3d.js').then((mod) => {
       medalStage = mod.createMedalStage($('#medal-canvas'), {
-        onChime: (v) => note([86, 90, 93, 98][Math.floor(Math.random() * 4)], 0.12 + v * 0.4, 1.8)
+        onChime: (v) => uiNote([86, 90, 93, 98][Math.floor(Math.random() * 4)], 0.12 + v * 0.4, 1.8)
       });
       $('#ms-close').addEventListener('click', closeMedal);
     });
@@ -420,7 +420,7 @@ function contact() {
   $('#links').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-copy]'); if (!b) return;
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = t('copied'); } catch { b.textContent = b.dataset.copy; }
-    note(SCALE[9], 0.25, 1.4);
+    uiNote(SCALE[9], 0.25, 1.4);
     setTimeout(() => (b.textContent = t('copy')), 2200);
   });
   $('#quote').innerHTML = `“${esc(profile.quote.text)}”<cite>— ${esc(profile.quote.author)}</cite>`;
@@ -432,7 +432,7 @@ function contact() {
     io.disconnect();
     out.innerHTML = `PING <b>gabriel</b> (${esc(profile.location)})\n`;
     await sleep(reduced ? 0 : 600);
-    note(SCALE[7], 0.25, 1.5);
+    uiNote(SCALE[7], 0.25, 1.5);
     out.innerHTML += `64 bytes from gabriel: time=${(Math.random() * 8 + 3).toFixed(1)} ms · <b>${t('pong')}</b>`;
   }, { threshold: .5 });
   io.observe(out);
@@ -506,7 +506,7 @@ function terminal(pianoApi) {
     sound: () => print(`som ${piano.toggle() ? 'ligado ♪' : 'desligado'}`),
     ascii: (a) => { if (!scene) return print('webgl indisponível', 'e'); const v = a === 'off' ? null : 1; scene.setAscii(v); print(`ascii = ${v ? 'on' : 'off'} (easter egg)`); },
     pixel: (a) => { if (!scene) return print('webgl indisponível', 'e'); print(`pixel = ${scene.setPixel(+a || 4)}`); },
-    ink: () => { if (scene) for (let i = 0; i < 4; i++) setTimeout(() => { scene.drop((Math.random() - .5) * 1.6, (Math.random() - .5) * 1.4); note(SCALE[i * 2], 0.3, 2.5); }, i * 180); print('墨 ~ ~ ~'); },
+    ink: () => { if (scene) for (let i = 0; i < 4; i++) setTimeout(() => { scene.drop((Math.random() - .5) * 1.6, (Math.random() - .5) * 1.4); uiNote(SCALE[i * 2], 0.3, 2.5); }, i * 180); print('墨 ~ ~ ~'); },
     play: () => { scene?.tour(true); go('exp'); print('partida automática ♞ (stop para parar)'); },
     stop: () => { scene?.tour(false); stopSong(); print('ok.'); },
     sudo: (a, all) => print(/hire/.test(all) ? 'permissão concedida ✓  →  ' + esc(profile.links.email) : 'gabriel is not in the sudoers file. this incident will be reported.', /hire/.test(all) ? 'c' : 'e'),
