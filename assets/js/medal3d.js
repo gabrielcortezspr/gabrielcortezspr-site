@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { drawIcon } from './icons.js';
+import { LANG } from './i18n.js';
 
 const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 const POST = /* glsl */`
@@ -56,7 +57,9 @@ const TIER = {
   honor:  { metal: 0x2a2a2a, glyph: '#f2f2f2', ribbon: ['#2c2c2c', '#7a7a7a'] },
   seal:   { metal: 0x1c1c1c, glyph: '#e0443a', ribbon: ['#2c2c2c', '#e0443a'] }
 };
-const TIER_PT = { trophy: 'CAMPEÃO', gold: 'OURO', silver: 'PRATA', bronze: 'BRONZE', honor: 'HONRA', seal: 'CERTIFICADO' };
+const TIER_PT = LANG === 'en'
+  ? { trophy: 'CHAMPION', gold: 'GOLD', silver: 'SILVER', bronze: 'BRONZE', honor: 'HONOR', seal: 'CERTIFICATE' }
+  : { trophy: 'CAMPEÃO', gold: 'OURO', silver: 'PRATA', bronze: 'BRONZE', honor: 'HONRA', seal: 'CERTIFICADO' };
 const S = 1.35;       // raio da medalha
 const L = 3.4;        // comprimento da fita até o aro
 const TOP = 6.2;      // altura dos pontos de fixação da fita
@@ -137,7 +140,7 @@ function buildTrophy(m) {
     c.fillStyle = '#151515'; c.fillRect(0, 0, 512, 160);
     c.strokeStyle = '#e0443a'; c.lineWidth = 6; c.strokeRect(12, 12, 488, 136);
     c.fillStyle = '#f2f2f2'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = 'bold 40px "Silkscreen", monospace'; c.fillText('CAMPEÃO', 256, 62);
+    c.font = 'bold 40px "Silkscreen", monospace'; c.fillText(TIER_PT.trophy, 256, 62);
     c.font = 'bold 26px "JetBrains Mono", monospace'; c.fillText(`${m.title.toUpperCase()} · ${m.year}`, 256, 112);
   });
   const base = new THREE.Mesh(new THREE.BoxGeometry(2, .9, 1.4), [dark, dark, dark, dark, new THREE.MeshStandardMaterial({ map: plaque, roughness: .5 }), dark]);
@@ -164,7 +167,7 @@ function buildScroll(m) {
     c.strokeStyle = '#2a2a2a'; c.lineWidth = 4; c.strokeRect(28, 28, 464, 624);
     c.lineWidth = 1.5; c.strokeRect(40, 40, 440, 600);
     c.fillStyle = '#1a1a1a'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = 'bold 30px "Silkscreen", monospace'; c.fillText('CERTIFICADO', 260, 110);
+    c.font = 'bold 30px "Silkscreen", monospace'; c.fillText(TIER_PT.seal, 260, 110);
     c.font = 'bold 34px "JetBrains Mono", monospace';
     const words = m.title.split(' '); let line = '', y = 200;
     for (const w of words) { if ((line + ' ' + w).trim().length > 16) { c.fillText(line.trim(), 260, y); y += 44; line = w; } else line += ' ' + w; }

@@ -13,6 +13,9 @@ Portfólio pessoal: **xadrez digital × suminagashi × pixel**, no mesmo visual 
 - **Medalhas** (olimpíadas, competições) com placar e filtros. Vitrine por ano, com as medalhas penduradas; clique numa e ela aparece em 3D pixelado: medalhas **suspensas pela fita** (girar e balançar), o Pro-Link como **troféu** num expositor e os certificados como **pergaminho** pendurado; `stack.board`, `tail -f current.log`, `ping gabriel` e o final `1-0 · good game`.
 - **Terminal** (botão `>_`) com alguns easter eggs para quem gosta de explorar.
 
+- **Português ou inglês**: o idioma é escolhido pelo navegador do visitante (e pelo fuso horário do Brasil); o botão `EN`/`PT` no topo troca e lembra a escolha. Textos em inglês em [`assets/js/i18n.js`](assets/js/i18n.js).
+- **Currículo em PDF** (versão estendida) em português e inglês em `assets/cv/`, na gaveta "sobre mim" e no contato.
+
 ## Editar conteúdo
 
 Todo o texto fica em [`assets/js/data.js`](assets/js/data.js): perfil, história (cada marco é um lance do cavalo), stack, projetos (`rarity` e `model`, o modelo 3D em [`assets/js/models.js`](assets/js/models.js)) e medalhas (`tier`: gold/silver/bronze/honor/trophy/seal). Ícones novos em pixel art: [`assets/js/pixelart.js`](assets/js/pixelart.js).

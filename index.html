@@ -26,8 +26,8 @@
 
   <!-- boot -->
   <div id="boot" aria-hidden="true">
-    <pre id="boot-log"></pre>
-    <div class="boot-bar"><i></i></div>
+    <div class="boot-row" id="boot-row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b class="boot-n">♞</b></div>
+    <p class="boot-name">GABRIEL CORTEZ<span class="blink">_</span></p>
   </div>
 
   <div class="clock" aria-hidden="true"><i id="clock-bar"></i></div>
@@ -35,15 +35,16 @@
   <header class="top">
     <a href="#hero" class="brand">GC<span class="blink">_</span></a>
     <nav class="moves" aria-label="Seções">
-      <a href="#exp"><b>1.</b> experiências</a>
-      <a href="#projects"><b>2.</b> projetos</a>
-      <a href="#medals"><b>3.</b> conquistas</a>
+      <a href="#exp"><b>1.</b> <span data-i18n="nav.exp">experiências</span></a>
+      <a href="#projects"><b>2.</b> <span data-i18n="nav.projects">projetos</span></a>
+      <a href="#medals"><b>3.</b> <span data-i18n="nav.medals">conquistas</span></a>
       <a href="#stack"><b>4.</b> stack</a>
       <a href="#piano"><b>5.</b> piano</a>
       <a href="#contact"><b>6.</b> ping</a>
     </nav>
     <div class="tools">
-      <button class="term-btn about-btn" data-open-about title="Sobre mim">sobre</button>
+      <button class="term-btn about-btn" data-open-about><span data-i18n="top.about">sobre</span></button>
+      <button class="term-btn lang-btn" id="lang-btn">EN</button>
       <button class="term-btn" id="sound-btn" aria-pressed="false" title="Som (piano)"><span>♪</span><em>off</em></button>
       <button class="term-btn" id="open-term" title="Terminal (tecla ~)"><span>&gt;_</span></button>
     </div>
@@ -58,11 +59,11 @@
           <span class="type" id="type-name"></span><span class="cursor"></span>
         </h1>
         <p class="role" id="role"></p>
-        <p class="now-line">Software Engineer na <b>Samsung Electronics</b> · Manaus, AM</p>
+        <p class="now-line" data-i18n="hero.now">Software Engineer na <b>Samsung Electronics</b> · Manaus, AM</p>
         <p class="pgn" id="pgn"></p>
         <div class="hero-cta">
-          <a class="btn pix" href="#exp">ver trabalho <span>→</span></a>
-          <button class="btn ghost" data-open-about>sobre mim</button>
+          <a class="btn pix" href="#exp"><span data-i18n="hero.cta">ver trabalho</span> <span>→</span></a>
+          <button class="btn ghost" data-open-about><span data-i18n="hero.about">sobre mim</span></button>
         </div>
       </div>
       <div class="kanji" aria-hidden="true">墨流し</div>
@@ -100,11 +101,11 @@
     <section id="piano" data-scene="piano" class="panel left piano">
       <h2 class="cmd" data-cmd="./piano --satie"></h2>
       <div class="glass piano-card">
-        <p class="lead-s">Entre um lance e outro, Satie no piano ao fundo.</p>
+        <p class="lead-s" data-i18n="piano.lead">Entre um lance e outro, Satie no piano ao fundo.</p>
         <pre class="tracker" id="tracker" aria-live="off"></pre>
         <div class="piano-ctl">
-          <button class="btn pix" id="play-satie">▶ gymnopédie nº1</button>
-          <button class="btn ghost" id="stop-satie">■ parar</button>
+          <button class="btn pix" id="play-satie" data-i18n="piano.play">▶ gymnopédie nº1</button>
+          <button class="btn ghost" id="stop-satie" data-i18n="piano.stop">■ parar</button>
         </div>
         <p class="tiny-k dim">Gymnopédie nº1 · Erik Satie, 1888</p>
       </div>
@@ -120,7 +121,7 @@
       <footer class="end">
         <p class="result">1-0 <span class="dim">·</span> good game<span class="blink">▌</span></p>
         <blockquote id="quote"></blockquote>
-        <p class="tiny">© <span id="year"></span> Gabriel Cortez · three.js, glsl, web audio e tinta digital</p>
+        <p class="tiny">© <span id="year"></span> Gabriel Cortez · <span data-i18n="footer">three.js, glsl, web audio e tinta digital</span></p>
       </footer>
     </section>
   </main>
@@ -135,6 +136,10 @@
       <div class="glass fetch"><pre class="fetch-info" id="fetch-info"></pre></div>
       <div id="whoami-text" class="lead"></div>
       <pre class="checklist" id="expertise"></pre>
+      <a class="cv-card" data-cv href="assets/cv/gabriel-cortez-cv-pt.pdf" target="_blank" rel="noopener">
+        <b data-i18n="cv.btn">currículo completo (PDF)</b> <span>↓</span>
+        <small data-i18n="cv.note">versão estendida, com tudo que tem no site e mais detalhes</small>
+      </a>
       <h2 class="cmd done-cmd">cat history.md</h2>
       <ol class="mini-tl" id="timeline"></ol>
       <h2 class="cmd done-cmd">tail -f current.log</h2>
@@ -155,7 +160,7 @@
       <p class="ms-desc" id="ms-desc"></p>
     </div>
     <div class="ms-ctl">
-      <button class="btn pix" id="ms-close">fechar ×</button>
+      <button class="btn pix" id="ms-close" data-i18n="close">fechar ×</button>
     </div>
   </div>
 

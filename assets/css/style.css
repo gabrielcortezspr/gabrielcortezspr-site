@@ -43,10 +43,16 @@ main { position: relative; z-index: 2; }
 /* ── boot ─────────────────────────────────────────────── */
 #boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-content: center; gap: 1.2rem; padding: 16px; transition: opacity .5s steps(5), visibility .5s; }
 #boot.done { opacity: 0; visibility: hidden; }
-#boot-log { margin: 0; color: var(--ink-3); font-size: 13px; min-height: 9em; width: min(520px, calc(100vw - 32px)); white-space: pre-wrap; }
-#boot-log b { color: var(--ink); }
-.boot-bar { width: min(520px, calc(100vw - 32px)); height: 12px; border: 2px solid var(--ink-3); padding: 2px; }
-.boot-bar i { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 10px); transition: width .2s steps(4); }
+.boot-row { position: relative; display: grid; grid-template-columns: repeat(8, 28px); border: 2px solid var(--ink-3); }
+.boot-row i { height: 28px; background: var(--sq-l); transition: background .2s; }
+.boot-row i:nth-child(even) { background: var(--sq-d); }
+.boot-row i.on { background: #2e2e2e; }
+.boot-row i.on:nth-child(even) { background: #1e1e1e; }
+.boot-row i.on:last-of-type { background: var(--seal); }
+.boot-n { position: absolute; left: 0; top: -2px; width: 28px; height: 28px; display: grid; place-items: center; font-size: 22px; color: var(--ink); text-shadow: 2px 2px 0 var(--seal); transition: transform .11s steps(2); animation: hop .22s ease-in-out infinite alternate; }
+@keyframes hop { to { translate: 0 -6px; } }
+.boot-name { margin: 0; text-align: center; font: 700 12px var(--pix); letter-spacing: 3px; color: var(--ink-3); }
+#boot { transition: opacity .35s, visibility .35s; }
 
 /* ── topo ─────────────────────────────────────────────── */
 .clock { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 30; }
@@ -162,6 +168,13 @@ section { min-height: 100vh; padding: 120px var(--gutter) 80px; position: relati
 .mini-tl h4 { margin: 0; font: 700 12px/1.35 var(--pix); }
 .mini-tl p { margin: .15rem 0 0; font-size: 12px; color: var(--ink-3); }
 .about-btn { font-size: 11px; }
+.lang-btn { font-size: 11px; min-width: 40px; }
+.cv-card { display: grid; grid-template-columns: 1fr auto; gap: .2rem 1rem; margin: 1.6rem 0 .4rem; padding: 14px 16px; text-decoration: none; border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--seal); transition: transform .12s, box-shadow .12s; }
+.cv-card:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--seal); }
+.cv-card b { font: 700 13px var(--pix); }
+.cv-card span { grid-row: span 2; align-self: center; font-size: 20px; color: var(--seal); }
+.cv-card small { color: var(--ink-3); font-size: 12px; }
+.links .cv { font: 600 12px var(--mono); color: var(--ink-2); border: 1px solid var(--ink-4); box-shadow: none; padding: 10px 14px; }
 
 /* ── stack: frentes de trabalho ───────────────────────── */
 .kits { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; width: min(1120px, 100%); }

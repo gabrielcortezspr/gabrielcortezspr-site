@@ -1,4 +1,5 @@
 import { profile, history, stack, projects, medals, currentLog, experiences } from './data.js';
+import { LANG, t, setLang, applyStatic, cvUrl } from './i18n.js';
 import { mountModel } from './models.js';
 import { pixelSvg } from './icons.js';
 import { piano, note, arp, playSong, stopSong, noteName, SCALE } from './piano.js';
@@ -13,28 +14,25 @@ let scene = null; // carregado de forma preguiçosa; o site funciona sem WebGL
 
 // ── boot ──────────────────────────────────────────────────────
 async function boot() {
-  const log = $('#boot-log'), bar = $('.boot-bar i');
-  const lines = [
-    '<b>cortez-os</b> v26.11 · build 1-0',
-    '[ ok ] mounting /dev/ink (suminagashi.glsl)',
-    '[ ok ] loading engine · 64 squares · 32 pieces',
-    '[ ok ] 13 project models · bayer dithering',
-    '[ ok ] piano · 49 keys · 7 partials · reverb 2.6s',
-    '[ ok ] 1. e4 e5  2. Nf3 Nc6  3. Bb5',
-    '<b>ready.</b> good luck, have fun'
-  ];
+  const row = $('#boot-row'), sq = $$('i', row), kn = $('.boot-n', row);
   const sceneP = import('./scene.js')
     .then((m) => { scene = m.createScene($('#gl')); scene.onMove = onMove; scene.onKey = (k) => pianoHit(k); })
     .catch((e) => { console.warn('WebGL indisponível', e); document.body.classList.add('no-gl'); });
-  for (let i = 0; i < lines.length; i++) {
-    log.innerHTML += lines[i] + '\n';
-    bar.style.width = ((i + 1) / lines.length) * 100 + '%';
-    await sleep(reduced ? 0 : 120 + Math.random() * 100);
-    if (i === 2) await sceneP;
+  let skip = false;
+  const onSkip = () => { skip = true; };
+  addEventListener('pointerdown', onSkip, { once: true }); addEventListener('keydown', onSkip, { once: true });
+  // o cavalo salta casa a casa enquanto a cena carrega (~1s)
+  for (let i = 0; i < sq.length && !skip && !reduced; i++) {
+    kn.style.transform = `translateX(${i * 100}%)`;
+    sq[i].classList.add('on');
+    await sleep(110);
   }
-  await sceneP;
-  await sleep(reduced ? 0 : 250);
+  sq.forEach((s) => s.classList.add('on'));
+  // não segura o visitante: espera a cena no máximo mais 1,2 s
+  await Promise.race([sceneP, sleep(skip ? 0 : 1200)]);
+  removeEventListener('pointerdown', onSkip); removeEventListener('keydown', onSkip);
   $('#boot').classList.add('done');
+  await sceneP;
 }
 
 // ── som ───────────────────────────────────────────────────────
@@ -147,7 +145,7 @@ function expGrid() {
     // passar o mouse avança a partida no tabuleiro ao fundo
     el.addEventListener('pointerenter', () => { scene?.setPly((experiences.length - +el.dataset.i) * 2); note(SCALE[(+el.dataset.i * 2 + 5) % SCALE.length], 0.2, 1.6); });
     el.addEventListener('click', () => openDetail({
-      title: x.org, kicker: x.now ? 'agora' : x.period, sub: `${x.role} · ${x.period}`, text: x.text, facts: x.facts, tags: x.tags, model: x.model, color: x.now ? '#e0443a' : '#f2f2f2'
+      title: x.org, kicker: x.now ? t('now') : x.period, sub: `${x.role} · ${x.period}`, text: x.text, facts: x.facts, tags: x.tags, model: x.model, color: x.now ? '#e0443a' : '#f2f2f2'
     }));
   });
   const io = new IntersectionObserver(([e]) => { if (!e.isIntersecting) return; io.disconnect(); tiles.forEach((t) => t.classList.add('in')); }, { threshold: .15 });
@@ -161,7 +159,7 @@ function stackBoard() {
     <article class="kit" style="--d:${i * 90}ms">
       <header><span class="file">${'abcde'[i]}</span><h3>${esc(g.title)}</h3></header>
       <ul class="kit-items">${g.items.map((it) => `<li>${esc(it)}</li>`).join('')}</ul>
-      <p class="kit-where"><span class="dim">usado em</span> ${esc(g.where)}</p>
+      <p class="kit-where"><span class="dim">${t('usedIn')}</span> ${esc(g.where)}</p>
     </article>`).join('');
   const kits = $$('.kit', b);
   kits.forEach((k, i) => k.addEventListener('pointerenter', () => note(SCALE[(i * 2 + 4) % SCALE.length], 0.22, 1.6)));
@@ -172,11 +170,11 @@ function stackBoard() {
   }, { threshold: .15 });
   io.observe(b);
   const n = stack.reduce((a, g) => a + g.items.length, 0);
-  $('#stack-note').textContent = `${n} ferramentas · ${stack.length} frentes · todas usadas em projeto real`;
+  $('#stack-note').textContent = t('stackNote')(n, stack.length);
 }
 
 // ── cartas de projeto ─────────────────────────────────────────
-const RARITY = { common: 'COMUM', uncommon: 'INCOMUM', rare: 'RARA', legendary: 'LENDÁRIA' };
+const RARITY = t('rarity');
 const RCOLOR = { common: '#5c5c5c', uncommon: '#9a9a9a', rare: '#e0443a', legendary: '#f2f2f2' };
 const cardModels = [];
 
@@ -232,7 +230,7 @@ function cards() {
   });
 
   const f = $('#filters');
-  const opts = [['all', 'TODOS'], ['ia', 'IA'], ['hw', 'HARDWARE'], ['web', 'WEB'], ['data', 'DADOS'], ['gfx', 'GRÁFICOS']];
+  const opts = t('pfilters');
   f.innerHTML = opts.map(([k, v]) => `<button role="tab" data-f="${k}" aria-selected="${k === 'all'}">${v}</button>`).join('');
   f.addEventListener('click', (e) => {
     const btn = e.target.closest('button'); if (!btn) return;
@@ -252,7 +250,7 @@ function openProject(id) {
   const p = projects.find((x) => x.id === id); if (!p) return;
   openDetail({
     title: p.name, kicker: RARITY[p.rarity], sub: p.tagline, text: p.text, facts: p.facts, tags: p.tags, model: p.model, color: RCOLOR[p.rarity],
-    action: p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">abrir no github <span>→</span></a>` : `<a class="btn ghost" href="mailto:${profile.links.email}?subject=${encodeURIComponent('Demo: ' + p.name)}">pedir uma demo <span>→</span></a> <span class="dim">· repositório privado</span>`
+    action: p.url ? `<a class="btn pix" href="${p.url}" target="_blank" rel="noopener">${t('github')} <span>→</span></a>` : `<a class="btn ghost" href="mailto:${profile.links.email}?subject=${encodeURIComponent('Demo: ' + p.name)}">${t('demo')} <span>→</span></a> <span class="dim">· ${t('private')}</span>`
   });
 }
 function openDetail(d) {
@@ -277,7 +275,7 @@ function openDetail(d) {
 function closeModal() { $('#modal').hidden = true; modalModel?.destroy(); modalModel = null; }
 
 // ── medalhas ──────────────────────────────────────────────────
-const TIER = { gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', trophy: 'troféu', seal: 'evento' };
+const TIER = t('tier');
 function medalRow() {
   const row = $('#medal-row');
   // vitrine: medalhas penduradas, agrupadas por ano
@@ -298,11 +296,11 @@ function medalRow() {
 
   const counts = {};
   medals.forEach((m) => { counts[m.tier] = (counts[m.tier] || 0) + 1; });
-  const LBL = { trophy: 'troféu', gold: 'ouro', silver: 'prata', bronze: 'bronze', honor: 'honra', seal: 'certificados' };
+  const LBL = t('tally');
   $('#tally').innerHTML = Object.keys(LBL).filter((k) => counts[k]).map((k) => `<span class="t t-${k}"><b>${counts[k]}</b> ${LBL[k]}</span>`).join('');
 
   const filt = $('#medal-filters');
-  const cats = [['all', 'TODAS'], ['intl', 'INTERNACIONAIS'], ['nac', 'NACIONAIS'], ['evt', 'COMPETIÇÕES'], ['talk', 'APRESENTAÇÕES']];
+  const cats = t('mfilters');
   filt.innerHTML = cats.map(([k, v]) => `<button role="tab" data-f="${k}" aria-selected="${k === 'all'}">${v}</button>`).join('');
   filt.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
@@ -328,7 +326,7 @@ function medalRow() {
 
 // medalha 3D com física (carregada só quando alguém clica)
 let medalStage = null, medalStageP = null;
-const TIER_PT = { trophy: 'troféu · campeão', gold: 'medalha de ouro', silver: 'medalha de prata', bronze: 'medalha de bronze', honor: 'honra ao mérito', seal: 'certificado' };
+const TIER_PT = t('tierLong');
 async function openMedal(m) {
   const st = $('#medal-stage');
   $('#ms-tier').textContent = TIER_PT[m.tier] || '';
@@ -416,13 +414,14 @@ function contact() {
   $('#links').innerHTML = `
     <a href="${L.linkedin}" target="_blank" rel="noopener">linkedin</a>
     <a href="mailto:${L.email}">email</a>
-    <button class="copy" data-copy="${L.email}">copiar e-mail</button>
+    <button class="copy" data-copy="${L.email}">${t('copy')}</button>
+    <a class="cv" href="${cvUrl()}" target="_blank" rel="noopener">${t('cv.btn')} ↓</a>
     <a href="${L.github}" target="_blank" rel="noopener">github</a>`;
   $('#links').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-copy]'); if (!b) return;
-    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'copiado ✓'; } catch { b.textContent = b.dataset.copy; }
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = t('copied'); } catch { b.textContent = b.dataset.copy; }
     note(SCALE[9], 0.25, 1.4);
-    setTimeout(() => (b.textContent = 'copiar e-mail'), 2200);
+    setTimeout(() => (b.textContent = t('copy')), 2200);
   });
   $('#quote').innerHTML = `“${esc(profile.quote.text)}”<cite>— ${esc(profile.quote.author)}</cite>`;
   $('#year').textContent = new Date().getFullYear();
@@ -434,7 +433,7 @@ function contact() {
     out.innerHTML = `PING <b>gabriel</b> (${esc(profile.location)})\n`;
     await sleep(reduced ? 0 : 600);
     note(SCALE[7], 0.25, 1.5);
-    out.innerHTML += `64 bytes from gabriel: time=${(Math.random() * 8 + 3).toFixed(1)} ms · <b>respondo rápido</b>`;
+    out.innerHTML += `64 bytes from gabriel: time=${(Math.random() * 8 + 3).toFixed(1)} ms · <b>${t('pong')}</b>`;
   }, { threshold: .5 });
   io.observe(out);
 
@@ -556,8 +555,22 @@ function modal() {
 }
 
 
+// ── idioma ────────────────────────────────────────────────────
+function i18nUI() {
+  applyStatic();
+  $$('[data-cv]').forEach((a) => (a.href = cvUrl()));
+  if (LANG === 'en') {
+    const cmd = { exp: 'ls ./experience', medals: 'cat awards.json' };
+    Object.entries(cmd).forEach(([id, c]) => { const h = document.querySelector(`#${id} .cmd`); if (h) h.dataset.cmd = c; });
+  }
+  const b = $('#lang-btn');
+  b.textContent = LANG === 'pt' ? 'EN' : 'PT';
+  b.title = LANG === 'pt' ? 'View in English' : 'Ver em português';
+  b.addEventListener('click', () => setLang(LANG === 'pt' ? 'en' : 'pt'));
+}
+
 // ── init ──────────────────────────────────────────────────────
-about(); timeline(); aboutDrawer(); expGrid(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); setupCommands();
+i18nUI(); about(); timeline(); aboutDrawer(); expGrid(); stackBoard(); cards(); medalRow(); tailLog(); contact(); modal(); soundUI(); setupCommands();
 const pianoApi = pianoSection();
 terminal(pianoApi);
 boot().then(() => {
